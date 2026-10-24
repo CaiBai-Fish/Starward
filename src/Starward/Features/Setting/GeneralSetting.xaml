@@ -58,6 +58,36 @@
                           OffContent="{x:Bind lang:Lang.SettingPage_RegistryBasedGameAccountSwitchingFeature}"
                           OnContent="{x:Bind lang:Lang.SettingPage_RegistryBasedGameAccountSwitchingFeature}" />
 
+            <!--  开机自动启动  -->
+            <ToggleSwitch x:Name="ToggleSwitch_RunAtStartup"
+                          Margin="0,12,0,0"
+                          IsOn="{x:Bind RunAtStartup, Mode=TwoWay}"
+                          OffContent="{x:Bind lang:Lang.SettingPage_RunAtStartup}"
+                          OnContent="{x:Bind lang:Lang.SettingPage_RunAtStartup}" />
+            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="{x:Bind lang:Lang.SettingPage_RunAtStartupDescription}"
+                       TextWrapping="Wrap" />
+
+            <!--  开机启动时静默启动  -->
+            <ToggleSwitch x:Name="ToggleSwitch_RunAtStartupSilently"
+                          Margin="0,8,0,0"
+                          IsEnabled="{x:Bind RunAtStartup, Mode=OneWay}"
+                          IsOn="{x:Bind RunAtStartupSilently, Mode=TwoWay}"
+                          OffContent="{x:Bind lang:Lang.SettingPage_RunAtStartupSilently}"
+                          OnContent="{x:Bind lang:Lang.SettingPage_RunAtStartupSilently}" />
+            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="{x:Bind lang:Lang.SettingPage_RunAtStartupSilentlyDescription}"
+                       TextWrapping="Wrap" />
+
+            <!--  游戏退出后打开启动器  -->
+            <ToggleSwitch Margin="0,12,0,0"
+                          IsOn="{x:Bind OpenLauncherAfterGameExit, Mode=TwoWay}"
+                          OffContent="{x:Bind lang:Lang.SettingPage_OpenLauncherAfterGameExit}"
+                          OnContent="{x:Bind lang:Lang.SettingPage_OpenLauncherAfterGameExit}" />
+            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="{x:Bind lang:Lang.SettingPage_OpenLauncherAfterGameExitDescription}"
+                       TextWrapping="Wrap" />
+
 
             <MenuFlyoutSeparator Margin="0,20,0,0" />
 

@@ -316,4 +316,13 @@
   <data name="GachaType_WEngineReverberation" xml:space="preserve">
     <value>W-Engine Reverberation</value>
   </data>
+  <data name="Game_ArknightsEndfield" xml:space="preserve">
+    <value>Arknights: Endfield</value>
+  </data>
+  <data name="Game_Arknights" xml:space="preserve">
+    <value>Arknights</value>
+  </data>
+  <data name="Game_WutheringWaves" xml:space="preserve">
+    <value>Wuthering Waves</value>
+  </data>
 </root>

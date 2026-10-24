@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -8,6 +9,7 @@ using Starward.Features.GameLauncher;
 using Starward.Features.GamepadControl;
 using Starward.Features.UrlProtocol;
 using Starward.Features.ViewHost;
+using Starward.Helpers;
 using Starward.RPC;
 using System;
 using System.Collections;
@@ -37,6 +39,7 @@ public partial class App : Application
         _uiDispatcherQueue = DispatcherQueue.GetForCurrentThread();
         UnhandledException += App_UnhandledException;
         _gcTimer.Elapsed += (_, _) => GC.Collect();
+        WeakReferenceMessenger.Default.Register<GameExitedMessage>(this, OnGameExited);
     }
 
 
@@ -76,6 +79,7 @@ public partial class App : Application
         }
 
         await AppConfig.CheckEnviromentAsync();
+        StartupManager.Synchronize();
 
         if (args.Length > 0 && await HandleStartupAsync(args))
         {
@@ -173,6 +177,28 @@ public partial class App : Application
     private void AppInstance_Activated(object? sender, AppActivationArguments e)
     {
         _uiDispatcherQueue.TryEnqueue(EnsureMainWindow);
+    }
+
+
+
+    /// <summary>
+    /// 游戏进程退出后，如果用户开启了对应选项，则显示启动器窗口并回到游戏启动页。
+    /// </summary>
+    private void OnGameExited(object? _, GameExitedMessage message)
+    {
+        if (!AppConfig.OpenLauncherAfterGameExit)
+        {
+            return;
+        }
+        _uiDispatcherQueue.TryEnqueue(() =>
+        {
+            try
+            {
+                EnsureMainWindow();
+                WeakReferenceMessenger.Default.Send(new MainViewNavigateMessage(typeof(GameLauncherPage)));
+            }
+            catch { }
+        });
     }
 
 

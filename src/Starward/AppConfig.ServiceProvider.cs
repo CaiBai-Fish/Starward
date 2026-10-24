@@ -8,6 +8,7 @@ using Starward.Core.Gacha.ZZZ;
 using Starward.Core.GameNotice;
 using Starward.Core.GameRecord;
 using Starward.Core.HoYoPlay;
+using Starward.Core.Hypergryph;
 using Starward.Core.SelfQuery;
 using Starward.Features.Background;
 using Starward.Features.Database;
@@ -55,6 +56,7 @@ public static partial class AppConfig
             sc.AddHttpClient().ConfigureHttpClientDefaults(ConfigDefaultHttpClient);
 
             sc.AddSingleton<HoYoPlayClient>();
+            sc.AddHttpClient<HypergryphLauncherClient>();
             sc.AddSingleton<GameNoticeClient>();
             sc.AddSingleton<HoYoPlayService>();
             sc.AddSingleton<BackgroundService>();
@@ -134,6 +136,7 @@ public static partial class AppConfig
         builder.ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
         {
             AutomaticDecompression = DecompressionMethods.All,
+            ConnectTimeout = TimeSpan.FromSeconds(15),
             EnableMultipleHttp2Connections = true,
             EnableMultipleHttp3Connections = true,
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
@@ -161,6 +164,7 @@ public static partial class AppConfig
         builder.ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
         {
             AutomaticDecompression = DecompressionMethods.All,
+            ConnectTimeout = TimeSpan.FromSeconds(15),
             EnableMultipleHttp2Connections = true,
             EnableMultipleHttp3Connections = true,
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),

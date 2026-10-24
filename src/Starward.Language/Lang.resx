@@ -2795,4 +2795,22 @@ You are welcome to submit the exported data to the following repository:</value>
   <data name="PlayTimeStatsDialog_StatsTip" xml:space="preserve">
     <value>Statistics are based on game runtime, not actual playtime, and are for reference only.</value>
   </data>
+  <data name="SettingPage_RunAtStartup" xml:space="preserve">
+    <value>Start with Windows</value>
+  </data>
+  <data name="SettingPage_RunAtStartupDescription" xml:space="preserve">
+    <value>Start Starward silently in the system tray when you sign in to Windows.</value>
+  </data>
+  <data name="SettingPage_RunAtStartupSilently" xml:space="preserve">
+    <value>Start silently (tray only)</value>
+  </data>
+  <data name="SettingPage_RunAtStartupSilentlyDescription" xml:space="preserve">
+    <value>Keep the main window hidden and stay in the system tray when starting with Windows.</value>
+  </data>
+  <data name="SettingPage_OpenLauncherAfterGameExit" xml:space="preserve">
+    <value>Open Starward when the game exits</value>
+  </data>
+  <data name="SettingPage_OpenLauncherAfterGameExitDescription" xml:space="preserve">
+    <value>Show the launcher window automatically after the game process exits.</value>
+  </data>
 </root>

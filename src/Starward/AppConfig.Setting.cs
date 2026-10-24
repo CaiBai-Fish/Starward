@@ -104,6 +104,33 @@ public static partial class AppConfig
     }
 
     /// <summary>
+    /// 开机自动启动
+    /// </summary>
+    public static bool RunAtStartup
+    {
+        get => GetValue<bool>();
+        set => SetValue(value);
+    }
+
+    /// <summary>
+    /// 开机启动时静默启动到系统托盘
+    /// </summary>
+    public static bool RunAtStartupSilently
+    {
+        get => GetValue(true);
+        set => SetValue(value);
+    }
+
+    /// <summary>
+    /// 游戏退出后显示启动器窗口
+    /// </summary>
+    public static bool OpenLauncherAfterGameExit
+    {
+        get => GetValue<bool>();
+        set => SetValue(value);
+    }
+
+    /// <summary>
     /// 主窗口关闭选项，隐藏/退出
     /// </summary>
     public static MainWindowCloseOption CloseWindowOption

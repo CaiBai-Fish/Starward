@@ -1,6 +1,7 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
+using Starward.Features.ThirdParty;
 using System;
 
 
@@ -100,6 +101,8 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
             GameBiz.hk4e => "ms-appx:///Assets/Image/icon_ys.jpg",
             GameBiz.hkrpg => "ms-appx:///Assets/Image/icon_sr.jpg",
             GameBiz.nap => "ms-appx:///Assets/Image/icon_zzz.jpg",
+            GameBiz.endfield => "ms-appx:///Assets/Image/icon_endfield.png",
+            GameBiz.arknights => "ms-appx:///Assets/Image/icon_arknights.png",
             _ => "ms-appx:///Assets/Image/Transparent.png",
         };
     }
@@ -107,6 +110,10 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
 
     private static string GameBizToServerIcon(GameBiz gameBiz)
     {
+        if (ThirdPartyGameService.IsThirdPartyGame(gameBiz))
+        {
+            return "ms-appx:///Assets/Image/Transparent.png";
+        }
         return gameBiz.Server switch
         {
             "cn" => "ms-appx:///Assets/Image/gameicon_hyperion.png",

@@ -12,6 +12,7 @@ using Starward.Features.Background;
 using Starward.Features.GameInstall;
 using Starward.Features.GameSelector;
 using Starward.Features.HoYoPlay;
+using Starward.Features.ThirdParty;
 using Starward.Helpers;
 using Starward.RPC.GameInstall;
 using System;
@@ -994,6 +995,11 @@ public sealed partial class GameLauncherSettingDialog : ContentDialog
     {
         try
         {
+            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz))
+            {
+                // 第三方启动器管理的游戏没有 HoYoPlay 包体信息。
+                return;
+            }
             var gamePackage = await _hoyoPlayService.GetGamePackageAsync(CurrentGameId);
             LatestVersion = gamePackage.Main.Major!.Version;
             var list = GetGameResourcePackageGroups(gamePackage.Main);

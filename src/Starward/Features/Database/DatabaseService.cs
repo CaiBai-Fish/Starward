@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
+using Serilog;
 using SharpSevenZip;
 using System;
 using System.Collections.Generic;
@@ -226,7 +227,11 @@ internal static class DatabaseService
             con.Execute("INSERT OR REPLACE INTO KVT (Key, Value, Time) VALUES (@Key, @Value, @Time);", new KVT(key, value?.ToString() ?? "", time ?? DateTime.Now));
 
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+            Log.Error(ex, "Set database value: {Key}", key);
+        }
     }
 
 

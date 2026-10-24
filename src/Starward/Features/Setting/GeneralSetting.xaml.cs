@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Starward.Features.ViewHost;
 using Starward.Frameworks;
+using Starward.Helpers;
 using System;
 using System.Globalization;
 using Windows.System;
@@ -169,6 +170,66 @@ public sealed partial class GeneralSetting : PageBase
         }
         catch { }
     }
+
+
+
+    #endregion
+
+
+
+    #region 开机自启 / 游戏退出后打开启动器
+
+
+
+    /// <summary>
+    /// 开机自动启动（静默启动到系统托盘）
+    /// </summary>
+    public bool RunAtStartup
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                StartupManager.TrySetEnabled(value);
+            }
+        }
+    } = StartupManager.IsEnabled();
+
+
+
+    /// <summary>
+    /// 开机启动时静默启动到系统托盘
+    /// </summary>
+    public bool RunAtStartupSilently
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                AppConfig.RunAtStartupSilently = value;
+                StartupManager.Synchronize();
+            }
+        }
+    } = AppConfig.RunAtStartupSilently;
+
+
+
+    /// <summary>
+    /// 游戏退出后打开启动器
+    /// </summary>
+    public bool OpenLauncherAfterGameExit
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                AppConfig.OpenLauncherAfterGameExit = value;
+            }
+        }
+    } = AppConfig.OpenLauncherAfterGameExit;
 
 
 

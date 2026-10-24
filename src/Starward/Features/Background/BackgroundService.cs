@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Starward.Core.HoYoPlay;
+using Starward.Core.Hypergryph;
 using Starward.Features.HoYoPlay;
+using Starward.Features.ThirdParty;
 using Starward.Helpers;
 using System;
 using System.Collections.Generic;
@@ -118,10 +120,16 @@ public class BackgroundService
     /// <returns></returns>
     public async Task<List<GameBackground>> GetGameBackgroundsAsync(GameId gameId, CancellationToken cancellationToken = default)
     {
+        if (ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && !HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
+        {
+            // 库洛游戏的本地图标不是可下载的远程资源，使用默认背景。
+            return [];
+        }
         GameBackgroundInfo backgroundInfo = await _hoYoPlayService.GetGameBackgroundAsync(gameId, cancellationToken);
         List<GameBackground> backgrounds = backgroundInfo?.Backgrounds?.ToList() ?? [];
         GameInfo gameInfo = await _hoYoPlayService.GetGameInfoAsync(gameId, cancellationToken);
-        if (!string.IsNullOrWhiteSpace(gameInfo?.Display?.Background?.Url))
+        if (!string.IsNullOrWhiteSpace(gameInfo?.Display?.Background?.Url)
+            && !gameInfo.Display.Background.Url.StartsWith("ms-appx:///", StringComparison.OrdinalIgnoreCase))
         {
             backgrounds.Add(GameBackground.FromPosterUrl(gameInfo.Display.Background.Url));
         }

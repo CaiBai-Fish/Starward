@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -11,6 +12,7 @@ using Starward.Core.HoYoPlay;
 using Starward.Features.GameLauncher;
 using Starward.Features.HoYoPlay;
 using Starward.Features.Setting;
+using Starward.Features.ThirdParty;
 using Starward.Features.ViewHost;
 using Starward.Helpers;
 using System;
@@ -44,6 +46,8 @@ public sealed partial class GameSelector : UserControl
 
 
     private readonly GameLauncherService _gameLauncherService = AppConfig.GetService<GameLauncherService>();
+
+    private readonly ILogger<GameSelector> _logger = AppConfig.GetLogger<GameSelector>();
 
 
 
@@ -94,6 +98,7 @@ public sealed partial class GameSelector : UserControl
     {
         this.XamlRoot.Changed -= XamlRoot_Changed;
         this.XamlRoot.Changed += XamlRoot_Changed;
+        _logger.LogInformation("GameSelector loaded");
         await Task.Delay(1000);
         await UpdateGameInfoAsync();
     }
@@ -154,16 +159,30 @@ public sealed partial class GameSelector : UserControl
 
     private List<GameInfo> GetCachedGameInfos()
     {
+        List<GameInfo> gameInfos = [];
         try
         {
             string? json = AppConfig.CachedGameInfo;
             if (!string.IsNullOrWhiteSpace(json))
             {
-                return JsonSerializer.Deserialize<List<GameInfo>>(json) ?? [];
+                gameInfos = JsonSerializer.Deserialize<List<GameInfo>>(json) ?? [];
             }
         }
         catch { }
-        return [];
+        try
+        {
+            // 第三方启动器的游戏由本地扫描补充，保证网络异常时也能显示已安装的游戏。
+            ThirdPartyGameService.EnsureInstallPathsDetected();
+            foreach (GameInfo info in ThirdPartyGameService.CreateGameInfos())
+            {
+                if (!gameInfos.Any(x => x.GameBiz == info.GameBiz))
+                {
+                    gameInfos.Add(info);
+                }
+            }
+        }
+        catch { }
+        return gameInfos;
     }
 
 
@@ -626,30 +645,55 @@ public sealed partial class GameSelector : UserControl
 
 
     /// <summary>
-    /// 更新所有游戏服务器信息，更新游戏图标
+    /// 更新所有游戏服务器信息，更新游戏图标。
+    /// 网络请求失败时按退避间隔重试，仍失败则回退到本地缓存，避免首次启动时界面完全空白。
     /// </summary>
     /// <returns></returns>
     private async Task UpdateGameInfoAsync()
     {
-        try
+        _logger.LogInformation("Updating game info list");
+        const int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            List<GameInfo> gameInfos = await _hoyoplayService.UpdateGameInfoListAsync();
-            InitializeGameServerArea(gameInfos);
-            foreach (GameBizIcon icon in GameBizIcons)
+            try
             {
-                if (icon.GameBiz.IsKnown())
+                List<GameInfo> gameInfos = await _hoyoplayService.UpdateGameInfoListAsync();
+                if (gameInfos.Count == 0)
                 {
-                    icon.UpdateInfo();
+                    throw new InvalidOperationException("The game info list is empty.");
                 }
-                else
+                InitializeGameServerArea(gameInfos);
+                foreach (GameBizIcon icon in GameBizIcons)
                 {
-                    GameInfo info = await _hoyoplayService.GetGameInfoAsync(icon.GameId);
-                    icon.UpdateInfo(info);
+                    if (icon.GameBiz.IsKnown())
+                    {
+                        icon.UpdateInfo();
+                    }
+                    else
+                    {
+                        GameInfo info = await _hoyoplayService.GetGameInfoAsync(icon.GameId);
+                        icon.UpdateInfo(info);
+                    }
                 }
+                await InitializeInstalledGamesCommand.ExecuteAsync(null);
+                _logger.LogInformation("Game info list updated: {Count}", gameInfos.Count);
+                return;
             }
-            await InitializeInstalledGamesCommand.ExecuteAsync(null);
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Update game info failed (attempt {Attempt}/{MaxAttempts})", attempt, maxAttempts);
+            }
+            if (attempt < maxAttempts)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(attempt * 3));
+            }
         }
-        catch { }
+        // 所有重试都失败时，使用上一次成功拉取的缓存；至少让已有选择的游戏仍可显示。
+        List<GameInfo> cachedGameInfos = GetCachedGameInfos();
+        if (cachedGameInfos.Count > 0)
+        {
+            InitializeGameServerArea(cachedGameInfos);
+        }
     }
 
 
@@ -831,6 +875,12 @@ public sealed partial class GameSelector : UserControl
                         var _files = new DirectoryInfo(installPath).EnumerateFiles("*", SearchOption.AllDirectories).ToList();
                         server.TotalSize = _files.Sum(x => x.Length);
                         InstalledGames.Add(server);
+                        // 已安装的第三方游戏自动固定到顶部图标区，避免只出现在展开的已安装列表里。
+                        if (ThirdPartyGameService.IsThirdPartyGame(server.GameBiz) && !GameBizIcons.Any(x => x.GameBiz == server.GameBiz))
+                        {
+                            server.IsPinned = true;
+                            GameBizIcons.Add(server);
+                        }
                         if (_files.Count() > 0)
                         {
                             serverCount++;

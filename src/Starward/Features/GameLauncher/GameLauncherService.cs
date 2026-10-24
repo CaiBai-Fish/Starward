@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
+using Starward.Core.Hypergryph;
 using Starward.Features.GameSetting;
 using Starward.Features.HoYoPlay;
+using Starward.Features.ThirdParty;
 using Starward.Features.PlayTime;
 using Starward.Helpers;
 using System;
@@ -28,13 +30,16 @@ internal partial class GameLauncherService
 
     private readonly GameAuthLoginService _gameAuthLoginService;
 
+    private readonly HypergryphLauncherClient _hypergryphLauncherClient;
 
-    public GameLauncherService(ILogger<GameLauncherService> logger, HoYoPlayService hoYoPlayService, PlayTimeRecordService playTimeRecorderService, GameAuthLoginService gameAuthLoginService)
+
+    public GameLauncherService(ILogger<GameLauncherService> logger, HoYoPlayService hoYoPlayService, PlayTimeRecordService playTimeRecorderService, GameAuthLoginService gameAuthLoginService, HypergryphLauncherClient hypergryphLauncherClient)
     {
         _logger = logger;
         _hoYoPlayService = hoYoPlayService;
         _playTimeRecorderService = playTimeRecorderService;
         _gameAuthLoginService = gameAuthLoginService;
+        _hypergryphLauncherClient = hypergryphLauncherClient;
     }
 
 
@@ -136,6 +141,26 @@ internal partial class GameLauncherService
     /// <returns></returns>
     public async Task<Version?> GetLocalGameVersionAsync(GameBiz gameBiz, string? installPath = null)
     {
+        if (HypergryphGameConstants.IsHypergryphGame(gameBiz))
+        {
+            installPath ??= GetGameInstallPath(gameBiz);
+            if (string.IsNullOrWhiteSpace(installPath))
+            {
+                return null;
+            }
+            HypergryphInstallMetadata? metadata = await HypergryphInstallMetadata.ReadAsync(installPath);
+            if (Version.TryParse(metadata?.Version, out Version? metadataVersion))
+            {
+                return metadataVersion;
+            }
+            // 官方启动器写入的版本文件是加密的，无法直接读取时按 0.0.0 处理。
+            return new Version(0, 0, 0);
+        }
+        if (ThirdPartyGameService.IsThirdPartyGame(gameBiz))
+        {
+            // 库洛游戏的版本与更新由对应官方启动器管理。
+            return null;
+        }
         installPath ??= GetGameInstallPath(gameBiz);
         if (string.IsNullOrWhiteSpace(installPath))
         {
@@ -173,6 +198,22 @@ internal partial class GameLauncherService
     /// <returns></returns>
     public async Task<(Version? Latest, Version? Predownload)> GetLatestGameVersionAsync(GameId gameId)
     {
+        if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
+        {
+            Version? localVersion = await GetLocalGameVersionAsync(gameId);
+            HypergryphLatestGame latest = await _hypergryphLauncherClient.GetLatestGameAsync(gameId.GameBiz, localVersion?.ToString(), default);
+            _ = Version.TryParse(latest.Version, out Version? latestVersion);
+            Version? predownloadVersion = null;
+            if (!string.IsNullOrWhiteSpace(latest.PrePatch?.TargetVersion))
+            {
+                _ = Version.TryParse(latest.PrePatch.TargetVersion, out predownloadVersion);
+            }
+            return (latestVersion, predownloadVersion);
+        }
+        if (ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz))
+        {
+            return (null, null);
+        }
         GameConfig? config = await _hoYoPlayService.GetGameConfigAsync(gameId);
         if (config is null)
         {
@@ -226,6 +267,14 @@ internal partial class GameLauncherService
     /// <returns></returns>
     public static string? GetGameExeName(GameBiz gameBiz)
     {
+        if (HypergryphGameConstants.IsHypergryphGame(gameBiz))
+        {
+            return HypergryphGameConstants.GetGameProfile(gameBiz).ExeName;
+        }
+        if (ThirdPartyGameService.GetExeName(gameBiz) is string thirdPartyExeName)
+        {
+            return thirdPartyExeName;
+        }
         string? name = gameBiz.Value switch
         {
             GameBiz.hk4e_cn or GameBiz.hk4e_bilibili => "YuanShen.exe",
@@ -359,7 +408,7 @@ internal partial class GameLauncherService
                 }
             }
             arg = AppConfig.GetStartArgument(gameId.GameBiz)?.Trim();
-            if (AppConfig.EnableLoginAuthTicket is true)
+            if (!ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.EnableLoginAuthTicket is true)
             {
                 string? ticket = await _gameAuthLoginService.CreateAuthTicketByGameBiz(gameId);
                 if (!string.IsNullOrWhiteSpace(ticket))
@@ -367,11 +416,11 @@ internal partial class GameLauncherService
                     arg += $" login_auth_ticket={ticket}";
                 }
             }
-            if (AppConfig.GetUsePopupWindow(gameId.GameBiz))
+            if (!ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.GetUsePopupWindow(gameId.GameBiz))
             {
                 arg += " -popupwindow";
             }
-            if (AppConfig.GetEnableDX12(gameId.GameBiz))
+            if (!ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.GetEnableDX12(gameId.GameBiz))
             {
                 arg += " -use-d3d12";
             }
@@ -380,7 +429,7 @@ internal partial class GameLauncherService
             {
                 GameSettingService.SetGenshinEnableHDR(gameId.GameBiz, AppConfig.EnableGenshinHDR);
             }
-            if (!thirdPartyTool && AppConfig.StartGameWithCMD)
+            if (!thirdPartyTool && !ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.StartGameWithCMD)
             {
                 arg = $"""/c start "" /d "{Path.GetDirectoryName(exe)}" "{exe}" {arg}""";
                 exe = "cmd.exe";

@@ -101,17 +101,20 @@
                 <ScalarTransition />
             </Border.OpacityTransition>
 
-            <ScrollViewer>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                          HorizontalScrollMode="Disabled"
+                          VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,12,12" Spacing="40">
 
                     <!--  游戏展示和选择  -->
-                    <ItemsControl ItemsSource="{x:Bind GameBizDisplays}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" Spacing="16" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
+                    <ItemsRepeater ItemsSource="{x:Bind GameBizDisplays}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MaximumRowsOrColumns="2"
+                                               MinItemWidth="192"
+                                               MinItemHeight="108"
+                                               ItemsStretch="None" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="local:GameBizDisplay">
                                 <Grid Name="Grid_GameBizDisplay"
                                       Width="192"
@@ -256,8 +259,8 @@
                                     </FlyoutBase.AttachedFlyout>
                                 </Grid>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
 
 
                     <!--  已安装游戏及大小  -->

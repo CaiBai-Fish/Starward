@@ -11,6 +11,7 @@ using Starward.Features.CloudGame;
 using Starward.Features.GameInstall;
 using Starward.Features.HoYoPlay;
 using Starward.Features.Overlay;
+using Starward.Features.ThirdParty;
 using Starward.Features.ViewHost;
 using Starward.Frameworks;
 using Starward.Helpers;
@@ -117,6 +118,20 @@ public sealed partial class GameLauncherPage : PageBase
     private async Task ClickStartGameButtonAsync()
     {
         await Task.Delay(1);
+        if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && GameState is GameState.InstallGame)
+        {
+            await LocateGameAsync();
+            return;
+        }
+        if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && GameState is GameState.GameIsRunning)
+        {
+            return;
+        }
+        if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && GameState is GameState.StartGame)
+        {
+            await OpenOfficialLauncherAsync();
+            return;
+        }
         switch (GameState)
         {
             case GameState.None:
@@ -173,6 +188,10 @@ public sealed partial class GameLauncherPage : PageBase
     {
         try
         {
+            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz))
+            {
+                return;
+            }
             GameInfo? gameInfo;
             if (CurrentGameBiz == GameBiz.bh3_global)
             {
@@ -282,6 +301,11 @@ public sealed partial class GameLauncherPage : PageBase
     {
         try
         {
+            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz))
+            {
+                await CheckThirdPartyGameStateAsync();
+                return;
+            }
             GameInstallPath = GameLauncherService.GetGameInstallPath(CurrentGameId, out bool storageRemoved);
             IsInstallPathRemovableTipEnabled = storageRemoved;
             if (GameInstallPath is null || storageRemoved)
@@ -318,6 +342,60 @@ public sealed partial class GameLauncherPage : PageBase
         {
             _logger.LogError(ex, "Check game version");
         }
+    }
+
+
+
+    /// <summary>
+    /// 打开第三方游戏的官方启动器。鹰角/库洛的游戏需要平台进程与登录令牌，
+    /// 直接启动 exe 会被游戏判定为非官方启动，因此交给官方启动器完成启动。
+    /// </summary>
+    private async Task OpenOfficialLauncherAsync()
+    {
+        try
+        {
+            string? launcher = ThirdPartyGameService.GetLauncherPath(CurrentGameBiz);
+            if (string.IsNullOrWhiteSpace(launcher))
+            {
+                // 没有找到官方启动器时回退到直接启动。
+                await StartGameAsync();
+                return;
+            }
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = launcher,
+                UseShellExecute = true,
+                WorkingDirectory = Path.GetDirectoryName(launcher),
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Open official launcher for {GameBiz}", CurrentGameBiz);
+        }
+    }
+
+
+
+    /// <summary>
+    /// 第三方启动器管理的游戏只需确认 exe 存在，版本与更新由官方启动器负责。
+    /// </summary>
+    private async Task CheckThirdPartyGameStateAsync()
+    {
+        GameInstallPath = GameLauncherService.GetGameInstallPath(CurrentGameId, out bool storageRemoved);
+        IsInstallPathRemovableTipEnabled = storageRemoved;
+        if (GameInstallPath is null || storageRemoved)
+        {
+            GameState = GameState.InstallGame;
+            return;
+        }
+        string? exeName = ThirdPartyGameService.GetExeName(CurrentGameBiz);
+        if (string.IsNullOrWhiteSpace(exeName) || !File.Exists(Path.Combine(GameInstallPath, exeName)))
+        {
+            GameState = GameState.InstallGame;
+            return;
+        }
+        GameState = GameState.StartGame;
+        await CheckGameRunningAsync();
     }
 
 

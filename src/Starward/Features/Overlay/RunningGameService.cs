@@ -1,4 +1,6 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Starward.Core;
+using Starward.Features.GameLauncher;
 using Starward.Features.GamepadControl;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -74,6 +76,7 @@ internal static class RunningGameService
     {
         lock (_runningGameLock)
         {
+            GameBiz? exitedGameBiz = null;
             for (int i = 0; i < _runningGames.Count; i++)
             {
                 RunningGame runningGame = _runningGames[i];
@@ -86,11 +89,17 @@ internal static class RunningGameService
                         _latestActiveGame = null;
                     }
                     i--; // Adjust index after removal
+                    exitedGameBiz = runningGame.GameBiz;
                     Debug.WriteLine($"Running game exited: {runningGame.Name} ({runningGame.Pid})");
                 }
             }
             if (_runningGames.Count == 0)
             {
+                _timer.Stop();
+                if (exitedGameBiz is GameBiz gameBiz)
+                {
+                    WeakReferenceMessenger.Default.Send(new GameExitedMessage(gameBiz));
+                }
                 _overlayWindow?.DispatcherQueue.TryEnqueue(() =>
                 {
                     if (_overlayWindow?.AppWindow is not null)

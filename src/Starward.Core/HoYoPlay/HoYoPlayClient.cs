@@ -15,7 +15,15 @@ public class HoYoPlayClient
 
     public HoYoPlayClient(HttpClient? httpClient = null)
     {
-        _httpClient = httpClient ?? new(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All }) { DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher };
+        _httpClient = httpClient ?? new(new SocketsHttpHandler
+        {
+            AutomaticDecompression = DecompressionMethods.All,
+            ConnectTimeout = TimeSpan.FromSeconds(15),
+        })
+        {
+            DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
+            Timeout = TimeSpan.FromSeconds(30),
+        };
     }
 
 

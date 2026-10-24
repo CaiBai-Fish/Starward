@@ -316,4 +316,13 @@
   <data name="GachaType_WEngineReverberation" xml:space="preserve">
     <value>音擎回响</value>
   </data>
+  <data name="Game_ArknightsEndfield" xml:space="preserve">
+    <value>明日方舟：终末地</value>
+  </data>
+  <data name="Game_Arknights" xml:space="preserve">
+    <value>明日方舟</value>
+  </data>
+  <data name="Game_WutheringWaves" xml:space="preserve">
+    <value>鸣潮</value>
+  </data>
 </root>

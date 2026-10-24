@@ -2795,4 +2795,22 @@
   <data name="PlayTimeStatsDialog_StatsTip" xml:space="preserve">
     <value>统计基于游戏运行时长，而不是实际在线时长，仅供参考。</value>
   </data>
+  <data name="SettingPage_RunAtStartup" xml:space="preserve">
+    <value>开机自动启动</value>
+  </data>
+  <data name="SettingPage_RunAtStartupDescription" xml:space="preserve">
+    <value>登录 Windows 后静默启动 Starward 并最小化到系统托盘。</value>
+  </data>
+  <data name="SettingPage_RunAtStartupSilently" xml:space="preserve">
+    <value>静默启动（仅显示托盘图标）</value>
+  </data>
+  <data name="SettingPage_RunAtStartupSilentlyDescription" xml:space="preserve">
+    <value>开机启动时隐藏主窗口，直接驻留系统托盘。</value>
+  </data>
+  <data name="SettingPage_OpenLauncherAfterGameExit" xml:space="preserve">
+    <value>游戏退出后打开启动器</value>
+  </data>
+  <data name="SettingPage_OpenLauncherAfterGameExitDescription" xml:space="preserve">
+    <value>游戏进程退出后自动显示启动器窗口。</value>
+  </data>
 </root>
