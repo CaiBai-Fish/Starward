@@ -12,14 +12,35 @@ namespace Starward.Features.Screenshot;
 internal static class ScreenshotHelper
 {
 
-    public static bool IsSupportedExtension(string file)
+    /// <summary>
+    /// 图库支持的图片文件扩展名
+    /// </summary>
+    public static bool IsSupportedImageExtension(string? file)
     {
         return Path.GetExtension(file) is ".jpg" or ".png" or ".jxr" or ".webp" or ".heic" or ".avif" or ".jxl";
     }
 
 
+    /// <summary>
+    /// 图库支持的视频文件扩展名
+    /// </summary>
+    public static bool IsVideoExtension(string? file)
+    {
+        return string.Equals(Path.GetExtension(file), ".mp4", StringComparison.OrdinalIgnoreCase);
+    }
 
-    public static List<string> WatcherFilters { get; } = new List<string> { "*.jpg", "*.png", "*.jxr", "*.webp", "*.heic", "*.avif", "*.jxl" };
+
+    /// <summary>
+    /// 图库支持的媒体文件扩展名，包含图片和视频
+    /// </summary>
+    public static bool IsSupportedExtension(string? file)
+    {
+        return IsSupportedImageExtension(file) || IsVideoExtension(file);
+    }
+
+
+
+    public static List<string> WatcherFilters { get; } = new List<string> { "*.jpg", "*.png", "*.jxr", "*.webp", "*.heic", "*.avif", "*.jxl", "*.mp4" };
 
 
 

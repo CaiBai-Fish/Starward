@@ -100,7 +100,7 @@ public sealed partial class ImageBatchConvertWindow : WindowEx
         {
             foreach (var item in items)
             {
-                if (ScreenshotHelper.IsSupportedExtension(Path.GetExtension(item.FilePath)))
+                if (ScreenshotHelper.IsSupportedImageExtension(Path.GetExtension(item.FilePath)))
                 {
                     if (!_itemsDict.ContainsKey(item.FilePath))
                     {
@@ -150,7 +150,7 @@ public sealed partial class ImageBatchConvertWindow : WindowEx
             var files = await FileDialogHelper.PickMultipleFilesAsync(Content.XamlRoot);
             foreach (var item in files)
             {
-                if (ScreenshotHelper.IsSupportedExtension(Path.GetExtension(item)))
+                if (ScreenshotHelper.IsSupportedImageExtension(Path.GetExtension(item)))
                 {
                     if (!_itemsDict.ContainsKey(item))
                     {
@@ -283,7 +283,7 @@ public sealed partial class ImageBatchConvertWindow : WindowEx
             var list = new List<string>();
             foreach (IStorageItem? item in items)
             {
-                if (item is StorageFile { Path: not "" } file && ScreenshotHelper.IsSupportedExtension(file.FileType))
+                if (item is StorageFile { Path: not "" } file && ScreenshotHelper.IsSupportedImageExtension(file.FileType))
                 {
                     if (!_itemsDict.ContainsKey(file.Path))
                     {
@@ -297,7 +297,7 @@ public sealed partial class ImageBatchConvertWindow : WindowEx
                     var files = await folder.GetFilesAsync();
                     foreach (var file1 in files)
                     {
-                        if (ScreenshotHelper.IsSupportedExtension(file1.FileType) && !_itemsDict.ContainsKey(file1.Path))
+                        if (ScreenshotHelper.IsSupportedImageExtension(file1.FileType) && !_itemsDict.ContainsKey(file1.Path))
                         {
                             var convertItem = new ImageConvertItem(file1.Path);
                             ImageConvertItems.Add(convertItem);

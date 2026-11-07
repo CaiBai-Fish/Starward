@@ -83,11 +83,7 @@ public class BackgroundService
     /// <returns></returns>
     public static bool FileIsSupportedVideo(string? name)
     {
-        return Path.GetExtension(name) switch
-        {
-            ".mp4" or ".mkv" or ".webm" => true,
-            _ => false,
-        };
+        return Path.GetExtension(name)?.ToLowerInvariant() is ".mp4" or ".mkv" or ".webm";
     }
 
 

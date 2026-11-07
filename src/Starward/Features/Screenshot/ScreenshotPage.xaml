@@ -118,6 +118,22 @@
                                 <ScaleTransform />
                             </sc:CachedImage.RenderTransform>
                         </sc:CachedImage>
+                        <!--  视频播放标识  -->
+                        <Border Width="40"
+                                Height="40"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#99000000"
+                                CornerRadius="20"
+                                IsHitTestVisible="False"
+                                Visibility="{x:Bind IsVideo, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <FontIcon HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      FontSize="18"
+                                      Foreground="White"
+                                      Glyph="&#xE768;"
+                                      IsTextScaleFactorEnabled="False" />
+                        </Border>
                         <!--  右键菜单  -->
                         <Grid.ContextFlyout>
                             <MenuFlyout>
@@ -160,6 +176,7 @@
                                 <!--  复制为 JPG  -->
                                 <MenuFlyoutItem x:Name="MenuFlyoutItem_CopyAsJPG"
                                                 Click="MenuFlyoutItem_CopyAsJPG_Click"
+                                                IsEnabled="{x:Bind IsVideo, Converter={StaticResource BoolReversedConverter}}"
                                                 IsTextScaleFactorEnabled="False"
                                                 Text="{x:Bind lang:Lang.ImageViewWindow2_CopyAsJPG}">
                                     <MenuFlyoutItem.Icon>

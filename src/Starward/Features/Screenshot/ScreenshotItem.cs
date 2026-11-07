@@ -27,11 +27,24 @@ public partial class ScreenshotItem : ObservableObject
     public string TimeMonthDay { get; set; }
 
 
+    /// <summary>
+    /// 是否是视频文件
+    /// </summary>
+    public bool IsVideo { get; }
+
+
+    /// <summary>
+    /// 是否是图片文件
+    /// </summary>
+    public bool IsImage => !IsVideo;
+
+
     public ScreenshotItem(string file)
     {
         FilePath = file;
         FileName = Path.GetFileName(file);
         Name = Path.GetFileNameWithoutExtension(file);
+        IsVideo = ScreenshotHelper.IsVideoExtension(file);
         if (TryParseCreationTime(Name, out var time))
         {
             CreationTime = time;
@@ -135,6 +148,12 @@ public partial class ScreenshotItem : ObservableObject
                 var info = new FileInfo(FilePath);
                 FileInfo = GetFileInfo(info);
                 _fileInfoSet = true;
+            }
+            if (IsVideo)
+            {
+                // 视频文件无法通过图像解码器读取尺寸
+                _updatedPixelSize = true;
+                return;
             }
             (uint width, uint height) = await ImageLoader.GetImagePixelSizeAsync(FilePath);
             if (width > 0 && height > 0)

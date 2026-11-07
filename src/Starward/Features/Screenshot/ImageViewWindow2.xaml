@@ -244,6 +244,14 @@
         </ScrollViewer>
 
 
+        <!--  视频  -->
+        <MediaPlayerElement x:Name="MediaPlayerElement_Video"
+                            Grid.Row="1"
+                            AreTransportControlsEnabled="True"
+                            Stretch="Uniform"
+                            Visibility="Collapsed" />
+
+
         <!--  上一张图  -->
         <Button x:Name="Button_PreviousImage"
                 Grid.Row="1"
@@ -563,63 +571,68 @@
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="6">
-            <!--  适应页面  -->
-            <Button x:Name="Button_ZoomToFitFactor"
-                    Width="40"
-                    Height="36"
-                    Padding="0"
-                    Click="Button_ZoomToFitFactor_Click"
-                    Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="{x:Bind lang:Lang.ImageViewWindow2_FitToWindow}">
-                <FontIcon FontSize="16"
-                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                          Glyph="&#xE9A6;"
-                          IsTextScaleFactorEnabled="False" />
-            </Button>
-            <!--  缩放率  -->
-            <TextBlock MinWidth="36"
-                       VerticalAlignment="Center"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       HorizontalTextAlignment="Center"
-                       IsTextScaleFactorEnabled="False"
-                       Text="{x:Bind ScrollViewer_Image.ZoomFactor.ToString('P0', x:Null)}" />
-            <!--  缩小  -->
-            <Button x:Name="Button_ZoomOut"
-                    Width="40"
-                    Height="36"
-                    Padding="0"
-                    Click="Button_ZoomOut_Click"
-                    Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="{x:Bind lang:Lang.ImageViewPage_ZoomOut}">
-                <FontIcon FontSize="16"
-                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                          Glyph="&#xE71F;"
-                          IsTextScaleFactorEnabled="False" />
-            </Button>
-            <!--  缩放滑块  -->
-            <Slider x:Name="Slider_ZoomFactor"
-                    Width="160"
-                    VerticalAlignment="Center"
-                    ManipulationDelta="Slider_ZoomFactor_ManipulationDelta"
-                    ManipulationMode="TranslateX,System"
-                    Maximum="5"
-                    Minimum="0.1"
-                    StepFrequency="0.01"
-                    ThumbToolTipValueConverter="{StaticResource ZoomFactorPercentConverter}"
-                    Value="{x:Bind ScrollViewer_Image.ZoomFactor}" />
-            <!--  放大  -->
-            <Button x:Name="Button_ZoomIn"
-                    Width="40"
-                    Height="36"
-                    Padding="0"
-                    Click="Button_ZoomIn_Click"
-                    Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="{x:Bind lang:Lang.ImageViewPage_ZoomIn}">
-                <FontIcon FontSize="16"
-                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                          Glyph="&#xE8A3;"
-                          IsTextScaleFactorEnabled="False" />
-            </Button>
+            <!--  图片缩放工具栏  -->
+            <StackPanel x:Name="StackPanel_ZoomCommands"
+                        Orientation="Horizontal"
+                        Spacing="6">
+                <!--  适应页面  -->
+                <Button x:Name="Button_ZoomToFitFactor"
+                        Width="40"
+                        Height="36"
+                        Padding="0"
+                        Click="Button_ZoomToFitFactor_Click"
+                        Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
+                        ToolTipService.ToolTip="{x:Bind lang:Lang.ImageViewWindow2_FitToWindow}">
+                    <FontIcon FontSize="16"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                              Glyph="&#xE9A6;"
+                              IsTextScaleFactorEnabled="False" />
+                </Button>
+                <!--  缩放率  -->
+                <TextBlock MinWidth="36"
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           HorizontalTextAlignment="Center"
+                           IsTextScaleFactorEnabled="False"
+                           Text="{x:Bind ScrollViewer_Image.ZoomFactor.ToString('P0', x:Null)}" />
+                <!--  缩小  -->
+                <Button x:Name="Button_ZoomOut"
+                        Width="40"
+                        Height="36"
+                        Padding="0"
+                        Click="Button_ZoomOut_Click"
+                        Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
+                        ToolTipService.ToolTip="{x:Bind lang:Lang.ImageViewPage_ZoomOut}">
+                    <FontIcon FontSize="16"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                              Glyph="&#xE71F;"
+                              IsTextScaleFactorEnabled="False" />
+                </Button>
+                <!--  缩放滑块  -->
+                <Slider x:Name="Slider_ZoomFactor"
+                        Width="160"
+                        VerticalAlignment="Center"
+                        ManipulationDelta="Slider_ZoomFactor_ManipulationDelta"
+                        ManipulationMode="TranslateX,System"
+                        Maximum="5"
+                        Minimum="0.1"
+                        StepFrequency="0.01"
+                        ThumbToolTipValueConverter="{StaticResource ZoomFactorPercentConverter}"
+                        Value="{x:Bind ScrollViewer_Image.ZoomFactor}" />
+                <!--  放大  -->
+                <Button x:Name="Button_ZoomIn"
+                        Width="40"
+                        Height="36"
+                        Padding="0"
+                        Click="Button_ZoomIn_Click"
+                        Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
+                        ToolTipService.ToolTip="{x:Bind lang:Lang.ImageViewPage_ZoomIn}">
+                    <FontIcon FontSize="16"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                              Glyph="&#xE8A3;"
+                              IsTextScaleFactorEnabled="False" />
+                </Button>
+            </StackPanel>
         </StackPanel>
 
 

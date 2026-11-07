@@ -28,6 +28,8 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.Graphics;
 using Windows.Graphics.DirectX;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
@@ -97,6 +99,7 @@ public sealed partial class ImageViewWindow2 : Window
         try
         {
             WeakReferenceMessenger.Default.UnregisterAll(this);
+            StopVideoPlayer();
             _loadImageCts?.Cancel();
             _loadImageCts?.Dispose();
             CanvasSwapChainPanel_Image.SwapChain = null;
@@ -156,6 +159,8 @@ public sealed partial class ImageViewWindow2 : Window
     {
         try
         {
+            StopVideoPlayer();
+            UpdateVideoMode(false);
             CurrentFilePath = "";
             CurrentFileName = "";
             CurrentPixelSizeText = "-";
@@ -616,12 +621,28 @@ public sealed partial class ImageViewWindow2 : Window
     }
 
 
-    private async Task LoadImageAsync(string filePath)
+    private Task LoadImageAsync(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            return Task.CompletedTask;
+        }
+        if (ScreenshotHelper.IsVideoExtension(filePath))
+        {
+            return LoadVideoAsync(filePath);
+        }
+        return LoadImageFileAsync(filePath);
+    }
+
+
+    private async Task LoadImageFileAsync(string filePath)
     {
         try
         {
             if (File.Exists(filePath))
             {
+                StopVideoPlayer();
+                UpdateVideoMode(false);
                 ProgressBar_ImageLoading.Visibility = Visibility.Visible;
                 _loadImageCts?.Cancel();
                 _loadImageCts = new();
@@ -665,10 +686,22 @@ public sealed partial class ImageViewWindow2 : Window
     }
 
 
-    private async Task LoadImageAsync(IStorageFile file)
+    private Task LoadImageAsync(IStorageFile file)
+    {
+        if (ScreenshotHelper.IsVideoExtension(file.Name))
+        {
+            return LoadVideoAsync(file);
+        }
+        return LoadImageFileAsync(file);
+    }
+
+
+    private async Task LoadImageFileAsync(IStorageFile file)
     {
         try
         {
+            StopVideoPlayer();
+            UpdateVideoMode(false);
             ProgressBar_ImageLoading.Visibility = Visibility.Visible;
             _loadImageCts?.Cancel();
             _loadImageCts = new();
@@ -794,6 +827,208 @@ public sealed partial class ImageViewWindow2 : Window
                 CurrentScreenshot = ScreenshotCollection[index + 1];
                 _ = LoadImageAsync(CurrentScreenshot.FilePath);
             }
+        }
+        catch { }
+    }
+
+
+    #endregion
+
+
+    #region Video
+
+
+    private MediaPlayer? _videoMediaPlayer;
+
+
+    private bool IsVideoMode { get; set; }
+
+
+    private void ToggleVideoPlayback()
+    {
+        try
+        {
+            if (_videoMediaPlayer is null)
+            {
+                return;
+            }
+            if (_videoMediaPlayer.PlaybackSession.PlaybackState is MediaPlaybackState.Playing)
+            {
+                _videoMediaPlayer.Pause();
+            }
+            else
+            {
+                _videoMediaPlayer.Play();
+            }
+        }
+        catch { }
+    }
+
+
+    private async Task LoadVideoAsync(string filePath)
+    {
+        try
+        {
+            StorageFile file = await StorageFile.GetFileFromPathAsync(filePath);
+            await LoadVideoAsync(file);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open video file: {FilePath}", filePath);
+            ShowVideoError(ex.Message);
+        }
+    }
+
+
+    private async Task LoadVideoAsync(IStorageFile file)
+    {
+        try
+        {
+            ProgressBar_ImageLoading.Visibility = Visibility.Visible;
+            _loadImageCts?.Cancel();
+            _loadImageCts = new();
+            CancellationToken token = _loadImageCts.Token;
+
+            CurrentFilePath = file.Path;
+            CurrentFileName = file.Name;
+            StopVideoPlayer();
+            ReleaseSourceBitmap();
+            UpdateVideoMode(true);
+            StackPanel_NoImage.Visibility = Visibility.Collapsed;
+            StackPanel_DisplayImageError.Visibility = Visibility.Collapsed;
+            CurrentPixelSizeText = "-";
+            CurrentFileSizeText = GetSizeText((long)(await file.GetBasicPropertiesAsync()).Size);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var mediaPlayer = new MediaPlayer
+            {
+                IsLoopingEnabled = false,
+                Source = MediaSource.CreateFromStorageFile(file),
+            };
+            mediaPlayer.CommandManager.IsEnabled = true;
+            _videoMediaPlayer = mediaPlayer;
+            mediaPlayer.MediaOpened += VideoMediaPlayer_MediaOpened;
+            mediaPlayer.MediaFailed += VideoMediaPlayer_MediaFailed;
+            MediaPlayerElement_Video.SetMediaPlayer(mediaPlayer);
+            mediaPlayer.Play();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load video: {FilePath}", file.Path);
+            ShowVideoError(ex.Message);
+        }
+    }
+
+
+    private void VideoMediaPlayer_MediaOpened(MediaPlayer sender, object args)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            try
+            {
+                if (sender != _videoMediaPlayer)
+                {
+                    return;
+                }
+                int width = (int)sender.PlaybackSession.NaturalVideoWidth;
+                int height = (int)sender.PlaybackSession.NaturalVideoHeight;
+                if (width > 0 && height > 0)
+                {
+                    CurrentPixelSizeText = $"{width} x {height}";
+                }
+                ProgressBar_ImageLoading.Visibility = Visibility.Collapsed;
+            }
+            catch { }
+        });
+    }
+
+
+    private void VideoMediaPlayer_MediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            try
+            {
+                if (sender != _videoMediaPlayer)
+                {
+                    return;
+                }
+                _logger.LogError(args.ExtendedErrorCode, "Failed to play video: {Message}", args.ErrorMessage);
+                string message = string.IsNullOrWhiteSpace(args.ErrorMessage) ? args.Error.ToString() : args.ErrorMessage;
+                ShowVideoError(message);
+            }
+            catch { }
+        });
+    }
+
+
+    private void ShowVideoError(string message)
+    {
+        try
+        {
+            StopVideoPlayer();
+            MediaPlayerElement_Video.Visibility = Visibility.Collapsed;
+            CanvasSwapChainPanel_Image.Visibility = Visibility.Collapsed;
+            StackPanel_NoImage.Visibility = Visibility.Collapsed;
+            StackPanel_DisplayImageError.Visibility = Visibility.Visible;
+            TextBlock_DisplayImageError.Text = message;
+            CurrentFileSizeText = "-";
+            CurrentPixelSizeText = "-";
+            ProgressBar_ImageLoading.Visibility = Visibility.Collapsed;
+        }
+        catch { }
+    }
+
+
+    private void StopVideoPlayer()
+    {
+        try
+        {
+            MediaPlayerElement_Video?.SetMediaPlayer(null);
+            var player = _videoMediaPlayer;
+            _videoMediaPlayer = null;
+            if (player is not null)
+            {
+                player.MediaOpened -= VideoMediaPlayer_MediaOpened;
+                player.MediaFailed -= VideoMediaPlayer_MediaFailed;
+                try { player.Pause(); } catch { }
+                try { player.Dispose(); } catch { }
+            }
+        }
+        catch { }
+    }
+
+
+    private void UpdateVideoMode(bool isVideo)
+    {
+        try
+        {
+            IsVideoMode = isVideo;
+            MediaPlayerElement_Video.Visibility = isVideo ? Visibility.Visible : Visibility.Collapsed;
+            ScrollViewer_Image.Visibility = isVideo ? Visibility.Collapsed : Visibility.Visible;
+            StackPanel_ZoomCommands.Visibility = isVideo ? Visibility.Collapsed : Visibility.Visible;
+            Button_EditImage.IsEnabled = !isVideo;
+            MenuFlyoutItem_CopyImage.IsEnabled = !isVideo;
+            if (isVideo)
+            {
+                Grid_EditImage.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch { }
+    }
+
+
+    private void ReleaseSourceBitmap()
+    {
+        try
+        {
+            _sourceBitmap?.Dispose();
+            _sourceBitmap = null!;
+            CanvasSwapChainPanel_Image.Visibility = Visibility.Collapsed;
         }
         catch { }
     }
@@ -988,6 +1223,10 @@ public sealed partial class ImageViewWindow2 : Window
     {
         try
         {
+            if (IsVideoMode)
+            {
+                return;
+            }
             Grid_EditImage.Visibility = Grid_EditImage.Visibility is Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
             ResetZoomFactor();
         }
@@ -1129,6 +1368,10 @@ public sealed partial class ImageViewWindow2 : Window
     {
         try
         {
+            if (IsVideoMode)
+            {
+                return;
+            }
             if (File.Exists(CurrentFilePath))
             {
                 var file = await StorageFile.GetFileFromPathAsync(CurrentFilePath);
@@ -1169,6 +1412,11 @@ public sealed partial class ImageViewWindow2 : Window
                         next = ScreenshotCollection.LastOrDefault();
                     }
                 }
+                if (IsVideoMode)
+                {
+                    // 视频文件在播放时会占用文件句柄，删除前需要先停止播放
+                    StopVideoPlayer();
+                }
                 var file = await StorageFile.GetFileFromPathAsync(CurrentFilePath);
                 await file.DeleteAsync();
                 if (next is not null)
@@ -1188,12 +1436,27 @@ public sealed partial class ImageViewWindow2 : Window
             // TODO 使用 RPC 删除
             ShowInfo(InfoBarSeverity.Warning, Lang.ImageViewWindow2_UnableToDeleteTheFile, Lang.ImageViewWindow2_InsufficientPermissionsOrTheFileIsInUse, 5000);
             _logger.LogError(ex, "Failed to delete image file");
+            ReloadDeletedFileIfNeeded();
         }
         catch (Exception ex)
         {
             ShowInfo(InfoBarSeverity.Error, Lang.ImageViewWindow2_FailedToDeleteImageFile, ex.Message, 0);
             _logger.LogError(ex, "Failed to delete image file");
+            ReloadDeletedFileIfNeeded();
         }
+    }
+
+
+    private void ReloadDeletedFileIfNeeded()
+    {
+        try
+        {
+            if (IsVideoMode && File.Exists(CurrentFilePath))
+            {
+                _ = LoadImageAsync(CurrentFilePath);
+            }
+        }
+        catch { }
     }
 
 
@@ -1402,7 +1665,12 @@ public sealed partial class ImageViewWindow2 : Window
 
     private void RootGrid_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
-        if (e.Key is VirtualKey.Escape)
+        if (e.Key is VirtualKey.Space && IsVideoMode)
+        {
+            ToggleVideoPlayback();
+            e.Handled = true;
+        }
+        else if (e.Key is VirtualKey.Escape)
         {
             Close();
         }

@@ -534,6 +534,10 @@ public sealed partial class ScreenshotPage : PageBase
         {
             if (sender is FrameworkElement fe && fe.DataContext is ScreenshotItem item)
             {
+                if (item.IsVideo)
+                {
+                    return;
+                }
                 if (File.Exists(item.FilePath))
                 {
                     string jpgFilePath = await ScreenshotHelper.ConvertToJpgAsync(item.FilePath);
