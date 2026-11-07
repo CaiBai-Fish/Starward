@@ -59,6 +59,10 @@ public static class HypergryphGameConstants
 
     public const string ArknightsIcon = "ms-appx:///Assets/Image/icon_arknights.png";
 
+    public const string EndfieldListLogo = "ms-appx:///Assets/Image/icon_endfield_logo.png";
+
+    public const string ArknightsListLogo = "ms-appx:///Assets/Image/icon_arknights_logo.png";
+
     public static HypergryphGameProfile ChinaArknightsProfile { get; } = new(
         GameBiz.arknights_cn,
         LauncherAppCode,

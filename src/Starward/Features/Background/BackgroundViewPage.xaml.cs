@@ -1,5 +1,8 @@
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using Starward.Core;
+using Starward.Core.HoYoPlay;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Starward.Frameworks;
@@ -184,6 +187,12 @@ public sealed partial class BackgroundViewPage : PageBase
             {
                 if (e.ClickedItem is BackgroundFileItem item)
                 {
+                    if (File.Exists(item.FilePath) && !BackgroundService.FileIsSupportedVideo(item.FilePath))
+                    {
+                        AppConfig.SetBg(AppConfig.CurrentGameBiz, Path.GetFileName(item.FilePath));
+                        WeakReferenceMessenger.Default.Send(new BackgroundChangedMessage(GameBackground.FromCustomFile(item.FilePath)));
+                        return;
+                    }
                     await Launcher.LaunchUriAsync(new(item.FilePath));
                 }
             }

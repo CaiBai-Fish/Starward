@@ -101,7 +101,6 @@ public sealed partial class GameRecordPage : PageBase
         NavigationViewItem_UpdateDeviceInfo.Tapped -= NavigationViewItem_UpdateDeviceInfo_Tapped;
         CurrentRole = null;
         GameRoleList = null!;
-        _battleChronicleWindow = null;
     }
 
 
@@ -329,7 +328,7 @@ public sealed partial class GameRecordPage : PageBase
         catch (miHoYoApiException ex)
         {
             _logger.LogError(ex, "Refresh game role info ({gameBiz}, {uid}).", CurrentRole?.GameBiz, CurrentRole?.Uid);
-            InAppToast.MainWindow?.Warning(Lang.Common_AccountError, ex.Message);
+            HandleMiHoYoApiException(ex, CurrentRole);
         }
         catch (HttpRequestException ex)
         {
@@ -533,25 +532,9 @@ public sealed partial class GameRecordPage : PageBase
 
 
 
-    private BattleChronicleWindow? _battleChronicleWindow;
-
-
-
     private void ShowBattleChronicleWindow()
     {
-        // 窗口关闭后 AppWindow is null
-        if (_battleChronicleWindow?.AppWindow is null)
-        {
-            _battleChronicleWindow = new BattleChronicleWindow
-            {
-                CurrentRole = CurrentRole,
-            };
-        }
-        else if (_battleChronicleWindow.CurrentRole != CurrentRole)
-        {
-            _battleChronicleWindow.CurrentRole = CurrentRole;
-        }
-        _battleChronicleWindow.Activate();
+        BattleChronicleWindow.ShowWindow(CurrentRole);
     }
 
 
@@ -604,13 +587,26 @@ public sealed partial class GameRecordPage : PageBase
 
 
 
-    public static void HandleMiHoYoApiException(miHoYoApiException ex)
+    /// <summary>
+    /// 是否为需要用户完成账号验证的错误码
+    /// </summary>
+    public static bool IsAccountErrorCode(int code) => code is 1034 or 5003 or 10035 or 10041 or 10053;
+
+
+    public static void HandleMiHoYoApiException(miHoYoApiException ex, GameRecordRole? role = null)
     {
-        if (ex.ReturnCode is 1034 or 5003 or 10035 or 10041 or 10053)
+        if (IsAccountErrorCode(ex.ReturnCode))
         {
             InAppToast.MainWindow?.ShowWithButton(InfoBarSeverity.Warning, Lang.Common_AccountError, ex.Message, Lang.HoyolabToolboxPage_VerifyAccount, () =>
             {
-                WeakReferenceMessenger.Default.Send(new GameRecordVerifyAccountMessage());
+                if (role is null)
+                {
+                    WeakReferenceMessenger.Default.Send(new GameRecordVerifyAccountMessage());
+                }
+                else
+                {
+                    BattleChronicleWindow.ShowWindow(role);
+                }
             });
         }
         else

@@ -600,12 +600,13 @@
                     VerticalAlignment="Center"
                     Background="{ThemeResource ControlOnImageFillColorDefaultBrush}"
                     CornerRadius="12"
-                    Visibility="{x:Bind IsDX12OptionVisible}">
+                    Visibility="{x:Bind IsDXOptionVisible}">
 
                 <StackPanel Margin="0,-2,0,-2"
                             Orientation="Horizontal"
                             Spacing="8">
                     <CheckBox MinWidth="0"
+                              Visibility="{x:Bind IsDX12OptionVisible}"
                               VerticalAlignment="Center"
                               VerticalContentAlignment="Center"
                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -618,7 +619,22 @@
                                    IsTextScaleFactorEnabled="False"
                                    Text="{x:Bind lang:Lang.GameLauncherPage_LaunchWithDX12}" />
                     </CheckBox>
-                    <TextBlock VerticalAlignment="Center"
+                    <CheckBox MinWidth="0"
+                              Visibility="{x:Bind IsDX11OptionVisible}"
+                              VerticalAlignment="Center"
+                              VerticalContentAlignment="Center"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                              IsChecked="{x:Bind EnableDX11, Mode=TwoWay}"
+                              Style="{ThemeResource CompactCheckBoxStyle}">
+                        <TextBlock Margin="-2,0,0,4"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   IsTextScaleFactorEnabled="False"
+                                   Text="{x:Bind lang:Lang.GameLauncherPage_LaunchWithDX11}" />
+                    </CheckBox>
+                    <TextBlock Visibility="{x:Bind IsDX12OptionVisible}"
+                               VerticalAlignment="Center"
                                FontSize="12"
                                IsTextScaleFactorEnabled="False">
                         <Hyperlink x:Name="Hyperlink_DX12Intro"

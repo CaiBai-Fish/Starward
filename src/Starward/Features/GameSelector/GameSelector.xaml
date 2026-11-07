@@ -109,9 +109,9 @@
                     <!--  游戏展示和选择  -->
                     <ItemsRepeater ItemsSource="{x:Bind GameBizDisplays}">
                         <ItemsRepeater.Layout>
-                            <UniformGridLayout MaximumRowsOrColumns="2"
-                                               MinItemWidth="192"
-                                               MinItemHeight="108"
+                            <UniformGridLayout MaximumRowsOrColumns="5"
+                                               MinItemWidth="208"
+                                               MinItemHeight="124"
                                                ItemsStretch="None" />
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>

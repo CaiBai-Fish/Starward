@@ -37,6 +37,10 @@
                    Margin="5"
                    x:Load="{x:Bind IsZZZEnabled}"
                    Source="ms-appx:///Assets/Image/IconStamina.png" />
+            <Image x:Name="Image_Endfield"
+                   Margin="5"
+                   x:Load="{x:Bind IsEndfieldEnabled}"
+                   Source="ms-appx:///Assets/Image/Endfield/icon_realtime.png" />
         </Grid>
 
 
@@ -63,8 +67,10 @@
                                   Glyph="&#xE72C;" />
                     </Button>
 
-                    <!--  角色信息  -->
-                    <StackPanel Orientation="Horizontal" Spacing="12">
+                    <!--  米哈游角色信息  -->
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="12"
+                                Visibility="{x:Bind GameRecordRole, Converter={StaticResource ObjectToVisibilityConverter}}">
                         <sc:CachedImage Width="40"
                                         Height="40"
                                         CornerRadius="40"
@@ -77,6 +83,22 @@
                                 <Run Text="{x:Bind GameRecordRole.RegionName}" />
                                 <Run Text="" />
                                 <Run Text="Lv." /><Run Text="{x:Bind GameRecordRole.Level}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!--  终末地角色信息  -->
+                    <StackPanel x:Name="StackPanel_EndfieldHeader"
+                                x:Load="{x:Bind IsEndfieldEnabled}"
+                                Orientation="Horizontal"
+                                Spacing="12">
+                        <Image Width="40"
+                               Height="40"
+                               Source="ms-appx:///Assets/Image/icon_endfield.png" />
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="{x:Bind EndfieldDailyNote.RoleName}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                <Run Text="UID " /><Run Text="{x:Bind EndfieldDailyNote.RoleId}" />
                             </TextBlock>
                         </StackPanel>
                     </StackPanel>
@@ -709,6 +731,99 @@
 
                         </Grid>
 
+                    </Grid>
+
+                    <!--  终末地  -->
+                    <Grid x:Name="Grid_Endfield"
+                          Grid.Row="2"
+                          MinWidth="220"
+                          x:Load="{x:Bind IsEndfieldEnabled}"
+                          Visibility="{x:Bind EndfieldDailyNote, Converter={StaticResource ObjectToVisibilityConverter}}">
+                        <StackPanel Spacing="6">
+                            <!--  理智  -->
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Image Width="20" Height="20">
+                                    <Image.Source>
+                                        <SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_sanity.svg" />
+                                    </Image.Source>
+                                </Image>
+                                <TextBlock VerticalAlignment="Center" FontSize="15">
+                                    <Run Text="{x:Bind EndfieldDailyNote.CurrentSanity}" /><Run Text=" / " /><Run Text="{x:Bind EndfieldDailyNote.MaxSanity}" />
+                                </TextBlock>
+                                <TextBlock VerticalAlignment="Bottom"
+                                           FontSize="12"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="理智" />
+                            </StackPanel>
+                            <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                <Run Text="回复时间  " /><Run Text="{x:Bind EndfieldDailyNote.RecoverHours}" /><Run Text="h " /><Run Text="{x:Bind EndfieldDailyNote.RecoverMinutes}" /><Run Text="min" />
+                            </TextBlock>
+                            <MenuFlyoutSeparator Margin="0,2,0,2" />
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Image Width="16" Height="16">
+                                        <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_daily.svg" /></Image.Source>
+                                    </Image>
+                                    <TextBlock VerticalAlignment="Center" Text="活跃度" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind EndfieldDailyNote.DailyActivity}" /><Run Text=" / " /><Run Text="{x:Bind EndfieldDailyNote.DailyActivityMax}" />
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Image Width="16" Height="16">
+                                        <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_weekly.svg" /></Image.Source>
+                                    </Image>
+                                    <TextBlock VerticalAlignment="Center" Text="每周事务" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind EndfieldDailyNote.WeeklyTask}" /><Run Text=" / " /><Run Text="{x:Bind EndfieldDailyNote.WeeklyTaskMax}" />
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Image Width="16" Height="16">
+                                        <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_protocol.svg" /></Image.Source>
+                                    </Image>
+                                    <TextBlock VerticalAlignment="Center" Text="通行证" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind EndfieldDailyNote.BattlePassLevel}" /><Run Text=" / " /><Run Text="{x:Bind EndfieldDailyNote.MaxBattlePassLevel}" />
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Image Width="16" Height="16">
+                                        <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_authority.svg" /></Image.Source>
+                                    </Image>
+                                    <TextBlock VerticalAlignment="Center" Text="权限等级" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind EndfieldDailyNote.Level}" /><Run Text=" / " /><Run Text="{x:Bind EndfieldDailyNote.MaxLevel}" />
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
                     </Grid>
 
 

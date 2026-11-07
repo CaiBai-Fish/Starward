@@ -212,15 +212,18 @@ public sealed partial class BBSWebBridge : UserControl
         }
         foreach (var item in cookies)
         {
-            var kv = item.Split('=');
-            if (kv.Length == 2)
+            // cookie 的值本身可能包含 '='（cookie_token_v2 / ltoken_v2 等 v2 token 带 base64 补位），
+            // 因此只能按第一个 '=' 切分，否则这类 cookie 会被整体丢弃，网页端将处于未登录状态
+            int index = item.IndexOf('=');
+            if (index <= 0)
             {
-                var key = kv[0].Trim();
-                var value = kv[1].Trim();
-                if (!string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(value))
-                {
-                    cookieDic[key] = value;
-                }
+                continue;
+            }
+            string key = item[..index].Trim();
+            string value = item[(index + 1)..].Trim();
+            if (!string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(value))
+            {
+                cookieDic[key] = value;
             }
         }
     }

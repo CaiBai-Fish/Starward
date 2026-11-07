@@ -133,6 +133,14 @@ public class BackgroundService
         {
             backgrounds.Add(GameBackground.FromCustomFile(path));
         }
+        if (backgrounds.Count == 0 && HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
+        {
+            string fallback = Path.Combine(AppContext.BaseDirectory, @"Assets\Image\background_endfield.jpg");
+            if (File.Exists(fallback))
+            {
+                backgrounds.Add(GameBackground.FromCustomFile(fallback));
+            }
+        }
         return backgrounds;
     }
 

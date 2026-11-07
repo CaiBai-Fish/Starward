@@ -584,6 +584,25 @@ public sealed partial class AppBackground : UserControl
 
     private void OnBackgroundChanged(object _, BackgroundChangedMessage message)
     {
+        if (message.GameBackground is GameBackground bg &&
+            bg.Type is GameBackground.BACKGROUND_TYPE_VIDEO &&
+            _mediaPlayer is not null &&
+            CurrentGameBackground?.Id == bg.Id)
+        {
+            try
+            {
+                if (bg.StopVideo)
+                {
+                    _mediaPlayer.Pause();
+                }
+                else
+                {
+                    _mediaPlayer.Play();
+                }
+            }
+            catch { }
+            return;
+        }
         _ = UpdateBackgroundAsync(message.GameBackground);
     }
 

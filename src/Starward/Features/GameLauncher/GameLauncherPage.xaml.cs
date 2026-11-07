@@ -6,6 +6,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
+using Starward.Core.Hypergryph;
 using Starward.Features.Background;
 using Starward.Features.CloudGame;
 using Starward.Features.GameInstall;
@@ -96,7 +97,7 @@ public sealed partial class GameLauncherPage : PageBase
         {
             Button_CloudGame.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
         }
-        if (feature.SupportGameAccountSwitcher && AppConfig.EnableGameAccountSwitcher)
+        if (feature.SupportGameAccountSwitcher && (AppConfig.EnableGameAccountSwitcher || HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz)))
         {
             EnableGameAccountSwitcher = true;
         }
@@ -118,16 +119,18 @@ public sealed partial class GameLauncherPage : PageBase
     private async Task ClickStartGameButtonAsync()
     {
         await Task.Delay(1);
-        if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && GameState is GameState.InstallGame)
+        bool isThirdParty = ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz);
+        bool isHypergryph = HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz);
+        if (isThirdParty && !isHypergryph && GameState is GameState.InstallGame)
         {
             await LocateGameAsync();
             return;
         }
-        if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && GameState is GameState.GameIsRunning)
+        if (isThirdParty && GameState is GameState.GameIsRunning)
         {
             return;
         }
-        if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && GameState is GameState.StartGame)
+        if (isThirdParty && !isHypergryph && GameState is GameState.StartGame)
         {
             await OpenOfficialLauncherAsync();
             return;
@@ -272,7 +275,37 @@ public sealed partial class GameLauncherPage : PageBase
     /// <summary>
     /// 是否显示 DX12 选项
     /// </summary>
-    public bool IsDX12OptionVisible { get; set => SetProperty(ref field, value); }
+    public bool IsDX12OptionVisible
+    {
+        get; set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(IsDXOptionVisible));
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// 是否显示 DX11 选项
+    /// </summary>
+    public bool IsDX11OptionVisible
+    {
+        get; set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(IsDXOptionVisible));
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// 是否显示 DX 选项
+    /// </summary>
+    public bool IsDXOptionVisible => IsDX12OptionVisible || IsDX11OptionVisible;
 
 
     /// <summary>
@@ -297,11 +330,27 @@ public sealed partial class GameLauncherPage : PageBase
     }
 
 
+    /// <summary>
+    /// 启用 DX11
+    /// </summary>
+    public bool EnableDX11
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                AppConfig.SetEnableDX11(CurrentGameBiz, value);
+            }
+        }
+    }
+
+
     private async void CheckGameVersion()
     {
         try
         {
-            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz))
+            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && !HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz))
             {
                 await CheckThirdPartyGameStateAsync();
                 return;
@@ -408,6 +457,13 @@ public sealed partial class GameLauncherPage : PageBase
     {
         try
         {
+            if (HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz) && CurrentGameBiz.Game == GameBiz.endfield)
+            {
+                IsDX12OptionVisible = false;
+                IsDX11OptionVisible = true;
+                EnableDX11 = AppConfig.GetEnableDX11(CurrentGameBiz);
+                return;
+            }
             EnableDX12 = AppConfig.GetEnableDX12(CurrentGameBiz);
             if (EnableDX12)
             {
@@ -609,6 +665,8 @@ public sealed partial class GameLauncherPage : PageBase
                 {
                     DispatcherQueue.TryEnqueue(() => RunningGameTime = null);
                     DispatcherQueue.TryEnqueue(CheckGameVersion);
+                    // 游戏退出后刷新已记录的游玩时长
+                    DispatcherQueue.TryEnqueue(() => Button_PlayTime?.RefreshPlayTime());
                     GameProcess = null;
                 }
                 else
@@ -1043,7 +1101,7 @@ public sealed partial class GameLauncherPage : PageBase
         {
             CanStopVideo = false;
             BackgroundImages = await _backgroundService.GetGameBackgroundsAsync(CurrentGameId);
-            if (BackgroundImages.Count > 1)
+            if (BackgroundImages.Count >= 1)
             {
                 Border_SwitchBackgroundImage.Visibility = Visibility.Visible;
                 GameBackground? currentBackground = await _backgroundService.GetSuggestedGameBackgroundAsync(CurrentGameId);

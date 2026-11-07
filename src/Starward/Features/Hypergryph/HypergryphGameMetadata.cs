@@ -14,6 +14,13 @@ internal static class HypergryphGameMetadata
     {
         GameId gameId = GameId.FromGameBiz(gameBiz)!;
         HypergryphGameProfile profile = HypergryphGameConstants.GetGameProfile(gameBiz);
+        // 游戏列表卡片显示官方 Logo（透明底），鼠标悬停的小图标仍使用游戏图标
+        string listLogo = gameBiz.Value switch
+        {
+            GameBiz.endfield_cn or GameBiz.endfield_global => HypergryphGameConstants.EndfieldListLogo,
+            GameBiz.arknights_cn => HypergryphGameConstants.ArknightsListLogo,
+            _ => profile.Icon,
+        };
         return new GameInfo
         {
             Id = gameId.Id,
@@ -27,7 +34,7 @@ internal static class HypergryphGameMetadata
                 Title = gameId.GameBiz.ToGameName(),
                 Subtitle = "",
                 Icon = new GameImage { Url = profile.Icon },
-                Logo = new GameImage { Url = profile.Icon },
+                Logo = new GameImage { Url = listLogo },
                 Thumbnail = new GameImage { Url = profile.Background },
                 Background = new GameImage { Url = profile.Background },
             },
@@ -55,14 +62,26 @@ internal static class HypergryphGameMetadata
         if (!string.IsNullOrWhiteSpace(mainBackground?.Url))
         {
             bool isVideo = !string.IsNullOrWhiteSpace(mainBackground.VideoUrl);
+            string id = string.IsNullOrWhiteSpace(mainBackground.MD5) ? mainBackground.Url : mainBackground.MD5;
             backgrounds.Add(new GameBackground
             {
-                Id = string.IsNullOrWhiteSpace(mainBackground.MD5) ? mainBackground.Url : mainBackground.MD5,
+                Id = id,
                 Background = new GameImage { Url = mainBackground.Url },
                 Theme = new GameImage { Url = "" },
-                Video = isVideo ? new GameImage { Url = mainBackground.VideoUrl } : null!,
-                Type = isVideo ? GameBackground.BACKGROUND_TYPE_VIDEO : GameBackground.BACKGROUND_TYPE_UNSPECIFIED,
+                Video = null!,
+                Type = GameBackground.BACKGROUND_TYPE_UNSPECIFIED,
             });
+            if (isVideo)
+            {
+                backgrounds.Add(new GameBackground
+                {
+                    Id = id + "_video",
+                    Background = new GameImage { Url = mainBackground.Url },
+                    Theme = new GameImage { Url = "" },
+                    Video = new GameImage { Url = mainBackground.VideoUrl },
+                    Type = GameBackground.BACKGROUND_TYPE_VIDEO,
+                });
+            }
         }
         return new GameBackgroundInfo
         {
@@ -122,7 +141,13 @@ internal static class HypergryphGameMetadata
 
     public static GamePackage CreateGamePackage(GameBiz gameBiz, HypergryphLatestGame latest)
     {
-        HypergryphPackagePart firstPart = latest.Package.Packs.FirstOrDefault() ?? new();
+        HypergryphGamePackage package = latest.Package ?? new();
+        List<HypergryphPackagePart> packs = package.Packs ?? [];
+        HypergryphPackagePart? firstPart = packs.FirstOrDefault();
+        string url = !string.IsNullOrWhiteSpace(firstPart?.Url) ? firstPart.Url : package.Url;
+        string md5 = !string.IsNullOrWhiteSpace(firstPart?.MD5) ? firstPart.MD5 : package.MD5;
+        long packedSize = packs.Count > 0 ? packs.Sum(x => x.PackageSize) : package.PackageSize;
+        long decompressedSize = package.TotalSize + (packs.Count > 0 ? packs.Sum(x => x.PackageSize) : 0);
         return new GamePackage
         {
             GameId = GameId.FromGameBiz(gameBiz)!,
@@ -135,10 +160,10 @@ internal static class HypergryphGameMetadata
                     [
                         new GamePackageFile
                         {
-                            Url = firstPart.Url,
-                            MD5 = firstPart.MD5,
-                            Size = latest.Package.Packs.Sum(x => x.PackageSize),
-                            DecompressedSize = latest.Package.TotalSize + latest.Package.Packs.Sum(x => x.PackageSize),
+                            Url = url,
+                            MD5 = md5,
+                            Size = packedSize,
+                            DecompressedSize = decompressedSize,
                         },
                     ],
                     AudioPackages = [],

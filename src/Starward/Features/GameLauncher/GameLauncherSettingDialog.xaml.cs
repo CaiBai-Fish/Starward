@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
+using Starward.Core.Hypergryph;
 using Starward.Features.Background;
 using Starward.Features.GameInstall;
 using Starward.Features.GameSelector;
@@ -995,9 +996,9 @@ public sealed partial class GameLauncherSettingDialog : ContentDialog
     {
         try
         {
-            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz))
+            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && !HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz))
             {
-                // 第三方启动器管理的游戏没有 HoYoPlay 包体信息。
+                // 库洛等第三方启动器管理的游戏没有 HoYoPlay 包体信息。
                 return;
             }
             var gamePackage = await _hoyoPlayService.GetGamePackageAsync(CurrentGameId);

@@ -57,6 +57,34 @@ public sealed partial class BattleChronicleWindow : WindowEx
 
 
 
+    private static BattleChronicleWindow? _instance;
+
+
+
+
+    /// <summary>
+    /// 打开（或复用）战绩窗口，可在任意页面触发
+    /// </summary>
+    public static void ShowWindow(GameRecordRole? role)
+    {
+        // 窗口关闭后 AppWindow is null
+        if (_instance?.AppWindow is null)
+        {
+            _instance = new BattleChronicleWindow
+            {
+                CurrentRole = role,
+            };
+        }
+        else if (_instance.CurrentRole != role)
+        {
+            _instance.CurrentRole = role;
+        }
+        _instance.Activate();
+    }
+
+
+
+
     private void RootGrid_Loaded(object sender, RoutedEventArgs e)
     {
         RootGrid.Loaded -= RootGrid_Loaded;

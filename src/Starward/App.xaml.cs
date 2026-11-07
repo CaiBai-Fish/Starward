@@ -157,13 +157,18 @@ public partial class App : Application
 
     private SystemTrayWindow m_SystemTrayWindow;
 
+    private long _lastGameExitedTick;
+
 
 
     public void EnsureMainWindow()
     {
         m_MainWindow ??= new MainWindow();
+        if (m_MainWindow.AppWindow is null || !m_MainWindow.AppWindow.IsVisible)
+        {
+            m_MainWindow.Show();
+        }
         m_MainWindow.Activate();
-        m_MainWindow.Show();
     }
 
 
@@ -190,6 +195,13 @@ public partial class App : Application
         {
             return;
         }
+        long now = Environment.TickCount64;
+        long last = System.Threading.Volatile.Read(ref _lastGameExitedTick);
+        if (now - last < 2000)
+        {
+            return;
+        }
+        System.Threading.Volatile.Write(ref _lastGameExitedTick, now);
         _uiDispatcherQueue.TryEnqueue(() =>
         {
             try

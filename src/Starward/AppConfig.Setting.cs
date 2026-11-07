@@ -130,6 +130,17 @@ public static partial class AppConfig
         set => SetValue(value);
     }
 
+
+
+    /// <summary>
+    /// 当前选择使用的鹰角账号（终末地数据/抽卡账号）
+    /// </summary>
+    public static string? EndfieldCurrentAccountKey
+    {
+        get => GetValue<string?>();
+        set => SetValue(value ?? "");
+    }
+
     /// <summary>
     /// 主窗口关闭选项，隐藏/退出
     /// </summary>
@@ -640,6 +651,22 @@ public static partial class AppConfig
     public static void SetEnableDX12(GameBiz biz, bool value)
     {
         SetValue(value, $"enable_dx12_{biz}");
+    }
+
+    /// <summary>
+    /// 启用 DX11
+    /// </summary>
+    public static bool GetEnableDX11(GameBiz biz)
+    {
+        return GetValue<bool>(default, $"enable_dx11_{biz}");
+    }
+
+    /// <summary>
+    /// 启用 DX11
+    /// </summary>
+    public static void SetEnableDX11(GameBiz biz, bool value)
+    {
+        SetValue(value, $"enable_dx11_{biz}");
     }
 
 

@@ -10,6 +10,7 @@ using Starward.Core.GameRecord.Genshin.DailyNote;
 using Starward.Core.GameRecord.StarRail.DailyNote;
 using Starward.Core.GameRecord.ZZZ.DailyNote;
 using Starward.Core.HoYoPlay;
+using Starward.Features.Gacha.Endfield;
 using System;
 using System.Threading.Tasks;
 
@@ -24,6 +25,8 @@ public sealed partial class DailyNoteButton : UserControl
 
 
     private readonly GameRecordService _gameRecordService = AppConfig.GetService<GameRecordService>();
+
+    private readonly EndfieldGachaService _endfieldGachaService = AppConfig.GetService<EndfieldGachaService>();
 
 
     public DailyNoteButton()
@@ -44,6 +47,7 @@ public sealed partial class DailyNoteButton : UserControl
                 OnPropertyChanged(nameof(IsGenshinEnabled));
                 OnPropertyChanged(nameof(IsStarRailEnabled));
                 OnPropertyChanged(nameof(IsZZZEnabled));
+                OnPropertyChanged(nameof(IsEndfieldEnabled));
             }
         }
     }
@@ -58,6 +62,8 @@ public sealed partial class DailyNoteButton : UserControl
 
     public bool IsZZZEnabled => CurrentGameId?.GameBiz.Game is GameBiz.nap;
 
+    public bool IsEndfieldEnabled => CurrentGameId?.GameBiz.Game is GameBiz.endfield;
+
 
 
     private GameRecordRole? GameRecordRole { get; set => SetProperty(ref field, value); }
@@ -70,6 +76,8 @@ public sealed partial class DailyNoteButton : UserControl
     public StarRailDailyNote StarRailDailyNote { get; set => SetProperty(ref field, value); }
 
     public ZZZDailyNote ZZZDailyNote { get; set => SetProperty(ref field, value); }
+
+    public EndfieldDailyNote? EndfieldDailyNote { get; set => SetProperty(ref field, value); }
 
 
     public string? ErrorMessage { get; set => SetProperty(ref field, value); }
@@ -98,6 +106,7 @@ public sealed partial class DailyNoteButton : UserControl
         GenshinDailyNote = null!;
         StarRailDailyNote = null!;
         ZZZDailyNote = null!;
+        EndfieldDailyNote = null;
     }
 
 
@@ -115,6 +124,20 @@ public sealed partial class DailyNoteButton : UserControl
             if (gameBiz.Server is "bilibili")
             {
                 gameBiz = $"{gameBiz.Game}_cn";
+            }
+            if (gameBiz.Game is GameBiz.endfield)
+            {
+                EndfieldGachaAccount? endfieldAccount = _endfieldGachaService.GetCurrentAccount();
+                if (endfieldAccount is null)
+                {
+                    this.Visibility = Visibility.Visible;
+                    ErrorMessage = "请先在寻访记录中登录鹰角账号。";
+                    return;
+                }
+                this.Visibility = Visibility.Visible;
+                ErrorMessage = null;
+                EndfieldDailyNote = await _endfieldGachaService.GetDailyNoteAsync(endfieldAccount, forceUpdate.Value);
+                return;
             }
             _gameRecordService.IsHoyolab = gameBiz.Server is "global";
             GameRecordRole = _gameRecordService.GetLastSelectGameRecordRoleOrTheFirstOne(gameBiz);
@@ -143,15 +166,42 @@ public sealed partial class DailyNoteButton : UserControl
         }
         catch (Exception ex)
         {
-            if (ex is miHoYoApiException)
+            if (ex is miHoYoApiException miHoYoEx)
             {
                 ErrorMessage = $"Error Code: {ex.Message}";
+                if (GameRecordPage.IsAccountErrorCode(miHoYoEx.ReturnCode) && ShouldShowAccountErrorToast())
+                {
+                    GameRecordPage.HandleMiHoYoApiException(miHoYoEx, GameRecordRole);
+                }
+            }
+            else if (CurrentGameId?.GameBiz.Game is GameBiz.endfield)
+            {
+                ErrorMessage = ex.Message;
             }
             _logger.LogError(ex, "Refresh daily note failed (Biz: {GameBiz}, Server: {GameServer}, Uid: {Uid})", CurrentGameId?.GameBiz, GameRecordRole?.Region, GameRecordRole?.Uid);
         }
     }
 
 
+
+
+
+    private static DateTime _lastAccountErrorToastTime;
+
+
+    /// <summary>
+    /// 账号异常提示节流，避免页面切换时反复弹出
+    /// </summary>
+    private static bool ShouldShowAccountErrorToast()
+    {
+        DateTime now = DateTime.Now;
+        if (now - _lastAccountErrorToastTime < TimeSpan.FromMinutes(2))
+        {
+            return false;
+        }
+        _lastAccountErrorToastTime = now;
+        return true;
+    }
 
 
 

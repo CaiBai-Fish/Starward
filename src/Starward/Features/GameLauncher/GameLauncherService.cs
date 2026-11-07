@@ -7,6 +7,7 @@ using Starward.Features.HoYoPlay;
 using Starward.Features.ThirdParty;
 using Starward.Features.PlayTime;
 using Starward.Helpers;
+using Starward.Helpers.EndfieldLaunch;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -425,6 +426,10 @@ internal partial class GameLauncherService
                 arg += " -use-d3d12";
             }
 
+            if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz) && gameId.GameBiz.Game == GameBiz.endfield && AppConfig.GetEnableDX11(gameId.GameBiz))
+            {
+                arg += " -force-d3d11";
+            }
             if (gameId.GameBiz.Game is GameBiz.hk4e)
             {
                 GameSettingService.SetGenshinEnableHDR(gameId.GameBiz, AppConfig.EnableGenshinHDR);
@@ -433,6 +438,31 @@ internal partial class GameLauncherService
             {
                 arg = $"""/c start "" /d "{Path.GetDirectoryName(exe)}" "{exe}" {arg}""";
                 exe = "cmd.exe";
+            }
+            // 终末地会校验直接父进程必须是官方签名的 Games.exe，直接启动会被拒绝。
+            // 通过管理员辅助进程把游戏目录里的官方签名文件伪装成挂起的 Games.exe 父进程。
+            if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz) && gameId.GameBiz.Game == GameBiz.endfield)
+            {
+                string? gamePath = Path.GetDirectoryName(exe);
+                if (!string.IsNullOrWhiteSpace(gamePath))
+                {
+                    string workerArguments = $"{EndfieldLaunchWorker.Command} \"{gamePath}\" \"{arg}\"";
+                    _logger.LogInformation("Start Endfield through parent bridge: {path}", gamePath);
+                    Process? worker = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = AppConfig.StarwardExecutePath,
+                        Arguments = workerArguments,
+                        Verb = "runas",
+                        UseShellExecute = true,
+                        WorkingDirectory = AppContext.BaseDirectory,
+                    });
+                    if (worker is not null)
+                    {
+                        // worker 是 Starward 辅助进程，不是游戏进程；按游戏 exe 名等待并记录真正的 Endfield.exe。
+                        Process? game = await _playTimeRecorderService.StartProcessToLogAsync(gameId);
+                        return game ?? worker;
+                    }
+                }
             }
             _logger.LogInformation("Start game ({biz})\r\npath: {exe}\r\narg: {arg}", gameId, exe, arg);
             var info = new ProcessStartInfo

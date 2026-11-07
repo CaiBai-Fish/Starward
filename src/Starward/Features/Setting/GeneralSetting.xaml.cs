@@ -233,6 +233,23 @@ public sealed partial class GeneralSetting : PageBase
 
 
 
+    /// <summary>
+    /// 游戏启动后的操作
+    /// </summary>
+    public int StartGameAction
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                AppConfig.StartGameAction = (Starward.Features.GameLauncher.StartGameAction)value;
+            }
+        }
+    } = Math.Clamp((int)AppConfig.StartGameAction, 0, 2);
+
+
+
     #endregion
 
 
