@@ -1,5 +1,7 @@
 English | [简体中文](./docs/README.zh-CN.md) | [Tiếng Việt](./docs/README.vi-VN.md) | [日本語](./docs/README.ja-JP.md) | [ภาษาไทย](./docs/README.th-TH.md) | [Русский](./docs/README.ru-RU.md)
 
+> **Fork notice**: 本仓库为 Starward 的修改分支，新增《明日方舟》《明日方舟：终末地》《鸣潮》支持。与上游的差异、构建与同步说明见 [FORK-README.md](./FORK-README.md)。
+
 
 # Starward
 
