@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.System;
 
 namespace Starward.Features.GameRecord.ArknightsRecord;
 
@@ -66,12 +67,8 @@ public sealed partial class ArknightsRecordPage : Page
             _sections = new()
             {
                 ["garrison"] = BuildGarrison(record),
-                ["sidestory"] = BuildActivities(record),
                 ["rogue"] = BuildRogues(record),
-                ["sandbox"] = BuildSandboxes(record),
-                ["tower"] = BuildTowers(record),
-                ["campaign"] = BuildCampaigns(record),
-                ["bossrush"] = BuildBossRushes(record),
+                ["activity"] = BuildActivityRecords(record),
             };
             if (NavigationView_Records.SelectedItem is not NavigationViewItem)
             {
@@ -98,16 +95,91 @@ public sealed partial class ArknightsRecordPage : Page
 
     private void NavigationView_Records_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
-        if (args.InvokedItemContainer?.Tag is string key)
+        if (args.InvokedItemContainer?.Tag is not string key)
         {
-            ShowSection(key);
+            return;
         }
+        if (key == "h5")
+        {
+            _ = Launcher.LaunchUriAsync(new Uri("https://game.skland.com/arknights/game-data?header=0&hg_media=skland"));
+            return;
+        }
+        ShowSection(key);
     }
 
 
     private async void Button_Refresh_Click(object sender, RoutedEventArgs e)
     {
         await LoadRecordAsync();
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildActivityRecords(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        foreach (ArknightsActivityRecord activity in record.Activities.OrderByDescending(x => x.StartTime))
+        {
+            string time = activity.StartTime == DateTimeOffset.MinValue
+                ? ""
+                : $"{activity.StartTime.ToLocalTime():yyyy-MM-dd} - {activity.EndTime.ToLocalTime():yyyy-MM-dd}";
+            bool completed = activity.TotalStages > 0 && activity.ClearedStages >= activity.TotalStages;
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = activity.Name,
+                Subtitle = string.IsNullOrWhiteSpace(time) ? "SideStory" : $"SideStory · {time}",
+                Value = completed ? "已完成" : "进行中",
+                HasProgress = activity.TotalStages > 0,
+                ProgressValue = activity.ClearedStages,
+                ProgressMaximum = Math.Max(1, activity.TotalStages),
+            });
+        }
+        foreach (ArknightsSandboxRecord sandbox in record.Sandboxes)
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = sandbox.Name,
+                Subtitle = $"生息演算 · 基地等级 {sandbox.BaseLv} · 击杀 {sandbox.EnemyKill}",
+                Value = $"生存 {sandbox.MaxDay} 天",
+                HasProgress = sandbox.SubQuestTotal > 0,
+                ProgressValue = sandbox.SubQuestDone,
+                ProgressMaximum = Math.Max(1, sandbox.SubQuestTotal),
+            });
+        }
+        foreach (ArknightsTowerRecord tower in record.Towers.OrderByDescending(x => x.Best))
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = tower.Name,
+                Subtitle = $"保全派驻 · {tower.SubName}",
+                Value = $"最高进度 {tower.Best}",
+            });
+        }
+        foreach (ArknightsCampaignRecord campaign in record.Campaigns.OrderByDescending(x => x.MaxKills))
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = campaign.Name,
+                Subtitle = $"剿灭作战 · {campaign.ZoneName}",
+                Value = $"最高剿灭 {campaign.MaxKills}",
+                HasProgress = campaign.MaxKills > 0,
+                ProgressValue = campaign.MaxKills,
+                ProgressMaximum = 400,
+            });
+        }
+        foreach (ArknightsBossRushRecord bossRush in record.BossRushes)
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = bossRush.Name,
+                Subtitle = bossRush.Played ? $"引航者试炼 · {bossRush.StageName} · {bossRush.Difficulty}" : "引航者试炼 · 暂无记录",
+                Value = bossRush.Played ? "已挑战" : "未挑战",
+            });
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无活动战绩" });
+        }
+        return list;
     }
 
 

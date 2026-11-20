@@ -128,7 +128,7 @@
                                     Tag="ArknightsRecordPage"
                                     ToolTipService.ToolTip="米游社工具箱">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE9D9;" />
+                        <FontIcon Glyph="&#xF133;" />
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.Content>
                         <Border Height="40">

@@ -102,37 +102,23 @@
                 <NavigationViewItemSeparator />
                 <NavigationViewItem x:Name="NavigationViewItem_Garrison" Tag="garrison" Content="卫戍协议">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE9D9;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Tag="sidestory" Content="SideStory">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8A5;" />
+                        <ImageIcon Source="ms-appx:///Assets/Image/icon_arknights_garrison.png" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Tag="rogue" Content="集成战略">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8F1;" />
+                        <ImageIcon Source="ms-appx:///Assets/Image/icon_arknights_rogue.png" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Tag="sandbox" Content="生息演算">
+                <NavigationViewItem Tag="activity" Content="活动战绩">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80F;" />
+                        <ImageIcon Source="ms-appx:///Assets/Image/icon_arknights_activity.png" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Tag="tower" Content="保全派驻">
+                <NavigationViewItemSeparator />
+                <NavigationViewItem Tag="h5" Content="战绩">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8F4;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Tag="campaign" Content="剿灭作战">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7FC;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Tag="bossrush" Content="引航者试炼">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7C1;" />
+                        <ImageIcon Source="ms-appx:///Assets/Image/ced4deac2162690105bbc8baad2b51a3_4109616186965788891.png" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
