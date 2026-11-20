@@ -101,7 +101,7 @@ public sealed partial class ArknightsRecordPage : Page
         }
         if (key == "h5")
         {
-            _ = Launcher.LaunchUriAsync(new Uri("https://game.skland.com/arknights/game-data?header=0&hg_media=skland"));
+            new ArknightsGameDataWindow().Activate();
             return;
         }
         ShowSection(key);

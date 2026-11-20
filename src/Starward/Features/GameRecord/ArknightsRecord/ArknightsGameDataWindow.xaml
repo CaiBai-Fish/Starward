@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<sf:WindowEx x:Class="Starward.Features.GameRecord.ArknightsRecord.ArknightsGameDataWindow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sf="using:Starward.Frameworks"
+             mc:Ignorable="d">
+
+    <Grid Loaded="Grid_Loaded">
+        <ProgressRing Width="40"
+                      Height="40"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      IsActive="True" />
+        <WebView2 x:Name="WebView_GameData" Visibility="Collapsed">
+            <WebView2.Resources>
+                <SolidColorBrush x:Key="BrushForThemeBackgroundColor" Color="Transparent" />
+            </WebView2.Resources>
+        </WebView2>
+    </Grid>
+</sf:WindowEx>
