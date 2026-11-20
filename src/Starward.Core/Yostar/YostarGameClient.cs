@@ -165,6 +165,53 @@ public sealed class YostarGameClient
     }
 
 
+    /// <summary>
+    /// 启动器背景图 URL。
+    /// </summary>
+    public async Task<string?> GetLauncherBackgroundUrlAsync(CancellationToken cancellationToken = default)
+    {
+        JsonElement data = await GetDataAsync("/api/launcher/base/config", cancellationToken);
+        return data.TryGetProperty("launcher_background_img", out JsonElement background) ? background.GetString() : null;
+    }
+
+
+    /// <summary>
+    /// 运营新闻/公告列表。
+    /// </summary>
+    public async Task<List<YostarNewsItem>> GetNewsAsync(CancellationToken cancellationToken = default)
+    {
+        JsonElement data = await GetDataAsync("/api/launcher/operations/resource", cancellationToken);
+        List<YostarNewsItem> news = [];
+        if (data.TryGetProperty("news_list", out JsonElement newsList)
+            && newsList.TryGetProperty("data", out JsonElement newsData)
+            && newsData.TryGetProperty("news", out JsonElement groups)
+            && groups.ValueKind is JsonValueKind.Array)
+        {
+            foreach (JsonElement group in groups.EnumerateArray())
+            {
+                string typeLabel = group.TryGetProperty("typeLabel", out JsonElement type) ? type.GetString() ?? "" : "";
+                if (!group.TryGetProperty("rows", out JsonElement rows) || rows.ValueKind is not JsonValueKind.Array)
+                {
+                    continue;
+                }
+                foreach (JsonElement row in rows.EnumerateArray())
+                {
+                    long publishTime = row.TryGetProperty("publishTime", out JsonElement time) && time.TryGetInt64(out long parsed) ? parsed : 0;
+                    news.Add(new YostarNewsItem
+                    {
+                        Title = row.TryGetProperty("title", out JsonElement title) ? title.GetString() ?? "" : "",
+                        Link = row.TryGetProperty("link", out JsonElement link) ? link.GetString() ?? "" : "",
+                        Thumbnail = row.TryGetProperty("thumbnail", out JsonElement thumbnail) ? thumbnail.GetString() ?? "" : "",
+                        TypeLabel = typeLabel,
+                        PublishTime = publishTime > 0 ? DateTimeOffset.FromUnixTimeMilliseconds(publishTime) : default,
+                    });
+                }
+            }
+        }
+        return news;
+    }
+
+
     public static string BuildFileUrl(string cdn, string source, string path)
     {
         // manifest 中存在包含 '#' 等字符的资源文件名，必须编码最后一段，否则会被当作 fragment。

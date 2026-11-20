@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
+using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Yostar;
 using Starward.Features.HoYoPlay;
 using Starward.Features.ThirdParty;
 using Starward.Helpers;
@@ -28,13 +30,16 @@ public class BackgroundService
 
     private readonly HttpClient _httpClient;
 
+    private readonly YostarGameClient _yostarGameClient;
 
 
-    public BackgroundService(ILogger<BackgroundService> logger, HoYoPlayService hoYoPlayService, HttpClient httpClient)
+
+    public BackgroundService(ILogger<BackgroundService> logger, HoYoPlayService hoYoPlayService, HttpClient httpClient, YostarGameClient yostarGameClient)
     {
         _logger = logger;
         _hoYoPlayService = hoYoPlayService;
         _httpClient = httpClient;
+        _yostarGameClient = yostarGameClient;
     }
 
 
@@ -116,6 +121,35 @@ public class BackgroundService
     /// <returns></returns>
     public async Task<List<GameBackground>> GetGameBackgroundsAsync(GameId gameId, CancellationToken cancellationToken = default)
     {
+        if (gameId.GameBiz == GameBiz.arknights_global)
+        {
+            List<GameBackground> result = [];
+            try
+            {
+                string? backgroundUrl = await _yostarGameClient.GetLauncherBackgroundUrlAsync(cancellationToken);
+                if (!string.IsNullOrWhiteSpace(backgroundUrl))
+                {
+                    result.Add(GameBackground.FromPosterUrl(backgroundUrl));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Get Yostar launcher background");
+            }
+            if (result.Count == 0)
+            {
+                string fallback = Path.Combine(AppContext.BaseDirectory, @"Assets\Image\background_arknights.jpg");
+                if (File.Exists(fallback))
+                {
+                    result.Add(GameBackground.FromCustomFile(fallback));
+                }
+            }
+            if (TryGetCustomBgFilePath(gameId, out string? customPath))
+            {
+                result.Add(GameBackground.FromCustomFile(customPath));
+            }
+            return result;
+        }
         if (ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && !HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
         {
             // 库洛游戏的本地图标不是可下载的远程资源，使用默认背景。

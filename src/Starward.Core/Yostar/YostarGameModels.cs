@@ -58,5 +58,7 @@ public sealed class YostarNewsItem
 
     public string Thumbnail { get; set; } = "";
 
+    public string TypeLabel { get; set; } = "";
+
     public DateTimeOffset PublishTime { get; set; }
 }

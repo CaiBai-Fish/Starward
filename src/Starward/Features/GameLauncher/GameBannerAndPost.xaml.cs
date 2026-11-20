@@ -6,13 +6,16 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Yostar;
 using Starward.Features.HoYoPlay;
 using Starward.Features.ViewHost;
 using Starward.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Vanara.PInvoke;
 using Windows.System;
@@ -35,6 +38,8 @@ public sealed partial class GameBannerAndPost : UserControl
 
 
     private readonly GameNoticeService _gameNoticeService = AppConfig.GetService<GameNoticeService>();
+
+    private readonly YostarGameClient _yostarGameClient = AppConfig.GetService<YostarGameClient>();
 
 
     public GameId CurrentGameId { get; set; }
@@ -172,7 +177,9 @@ public sealed partial class GameBannerAndPost : UserControl
     {
         try
         {
-            var content = await _hoYoPlayService.GetGameContentAsync(CurrentGameId);
+            GameContent? content = CurrentGameId.GameBiz == GameBiz.arknights_global
+                ? await GetYostarContentAsync()
+                : await _hoYoPlayService.GetGameContentAsync(CurrentGameId);
             if (content is null || !AppConfig.EnableBannerAndPost)
             {
                 ShowBannerAndPost = false;
@@ -186,6 +193,61 @@ public sealed partial class GameBannerAndPost : UserControl
         {
             _logger.LogError(ex, "Get game launcher content ({CurrentGameId})", CurrentGameId);
         }
+    }
+
+
+    /// <summary>
+    /// 明日方舟国际服：把 Yostar 运营新闻转换成背景轮播与公告/资讯列表。
+    /// </summary>
+    private async Task<GameContent?> GetYostarContentAsync()
+    {
+        List<YostarNewsItem> news = await _yostarGameClient.GetNewsAsync();
+        if (news.Count == 0)
+        {
+            return null;
+        }
+        news = news.GroupBy(x => x.Link).Select(x => x.First()).ToList();
+        string? backgroundUrl = null;
+        try
+        {
+            backgroundUrl = await _yostarGameClient.GetLauncherBackgroundUrlAsync();
+        }
+        catch { }
+        List<GameBanner> banners = news.Where(x => !string.IsNullOrWhiteSpace(x.Thumbnail))
+                                       .Take(5)
+                                       .Select((x, i) => new GameBanner
+                                       {
+                                           Id = i.ToString(),
+                                           Image = new GameImage { Url = x.Thumbnail, Link = x.Link },
+                                       }).ToList();
+        if (banners.Count == 0 && !string.IsNullOrWhiteSpace(backgroundUrl))
+        {
+            banners.Add(new GameBanner
+            {
+                Id = "0",
+                Image = new GameImage { Url = backgroundUrl, Link = news[0].Link },
+            });
+        }
+        List<GamePost> posts = news.Select((x, i) => new GamePost
+        {
+            Id = i.ToString(),
+            Type = x.TypeLabel.Equals("event", StringComparison.OrdinalIgnoreCase)
+                ? GamePostType.POST_TYPE_ACTIVITY
+                : x.TypeLabel.Equals("LATEST", StringComparison.OrdinalIgnoreCase)
+                    ? GamePostType.POST_TYPE_ANNOUNCE
+                    : GamePostType.POST_TYPE_INFO,
+            Title = x.Title,
+            Link = x.Link,
+            Date = x.PublishTime == default ? "" : x.PublishTime.ToLocalTime().ToString("MM/dd"),
+        }).ToList();
+        return new GameContent
+        {
+            GameId = CurrentGameId,
+            Language = "",
+            Banners = banners,
+            Posts = posts,
+            SocialMediaList = [],
+        };
     }
 
 
