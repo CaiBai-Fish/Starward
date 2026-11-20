@@ -28,6 +28,8 @@ public sealed partial class DailyNoteButton : UserControl
 
     private readonly EndfieldGachaService _endfieldGachaService = AppConfig.GetService<EndfieldGachaService>();
 
+    private readonly ArknightsDailyNoteService _arknightsDailyNoteService = AppConfig.GetService<ArknightsDailyNoteService>();
+
 
     public DailyNoteButton()
     {
@@ -48,6 +50,7 @@ public sealed partial class DailyNoteButton : UserControl
                 OnPropertyChanged(nameof(IsStarRailEnabled));
                 OnPropertyChanged(nameof(IsZZZEnabled));
                 OnPropertyChanged(nameof(IsEndfieldEnabled));
+                OnPropertyChanged(nameof(IsArknightsEnabled));
             }
         }
     }
@@ -64,6 +67,8 @@ public sealed partial class DailyNoteButton : UserControl
 
     public bool IsEndfieldEnabled => CurrentGameId?.GameBiz.Game is GameBiz.endfield;
 
+    public bool IsArknightsEnabled => CurrentGameId?.GameBiz.Game is GameBiz.arknights;
+
 
 
     private GameRecordRole? GameRecordRole { get; set => SetProperty(ref field, value); }
@@ -78,6 +83,8 @@ public sealed partial class DailyNoteButton : UserControl
     public ZZZDailyNote ZZZDailyNote { get; set => SetProperty(ref field, value); }
 
     public EndfieldDailyNote? EndfieldDailyNote { get; set => SetProperty(ref field, value); }
+
+    public ArknightsDailyNote? ArknightsDailyNote { get; set => SetProperty(ref field, value); }
 
 
     public string? ErrorMessage { get; set => SetProperty(ref field, value); }
@@ -107,6 +114,7 @@ public sealed partial class DailyNoteButton : UserControl
         StarRailDailyNote = null!;
         ZZZDailyNote = null!;
         EndfieldDailyNote = null;
+        ArknightsDailyNote = null;
     }
 
 
@@ -137,6 +145,22 @@ public sealed partial class DailyNoteButton : UserControl
                 this.Visibility = Visibility.Visible;
                 ErrorMessage = null;
                 EndfieldDailyNote = await _endfieldGachaService.GetDailyNoteAsync(endfieldAccount, forceUpdate.Value);
+                return;
+            }
+            if (gameBiz.Game is GameBiz.arknights)
+            {
+                this.Visibility = Visibility.Visible;
+                ArknightsAccount? arknightsAccount = _arknightsDailyNoteService.GetAccount();
+                if (arknightsAccount is null)
+                {
+                    ArknightsDailyNote = null;
+                    ErrorMessage = "请先登录明日方舟的鹰角账号。";
+                    Button_LoginArknights.Visibility = Visibility.Visible;
+                    return;
+                }
+                ErrorMessage = null;
+                Button_LoginArknights.Visibility = Visibility.Collapsed;
+                ArknightsDailyNote = await _arknightsDailyNoteService.GetDailyNoteAsync(arknightsAccount, forceUpdate.Value);
                 return;
             }
             _gameRecordService.IsHoyolab = gameBiz.Server is "global";
@@ -174,7 +198,7 @@ public sealed partial class DailyNoteButton : UserControl
                     GameRecordPage.HandleMiHoYoApiException(miHoYoEx, GameRecordRole);
                 }
             }
-            else if (CurrentGameId?.GameBiz.Game is GameBiz.endfield)
+            else if (CurrentGameId?.GameBiz.Game is GameBiz.endfield or GameBiz.arknights)
             {
                 ErrorMessage = ex.Message;
             }
@@ -184,6 +208,30 @@ public sealed partial class DailyNoteButton : UserControl
 
 
 
+
+
+    private async void Button_LoginArknights_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            EndfieldLoginDialog dialog = new() { XamlRoot = this.XamlRoot };
+            await dialog.ShowAsync();
+            if (string.IsNullOrWhiteSpace(dialog.LoginToken))
+            {
+                return;
+            }
+            ErrorMessage = "正在读取该鹰角账号的明日方舟角色…";
+            await _arknightsDailyNoteService.AddAccountAsync(dialog.LoginToken);
+            ErrorMessage = null;
+            Button_LoginArknights.Visibility = Visibility.Collapsed;
+            RefreshDailyNoteCommand.Execute(true);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _logger.LogError(ex, "Login Arknights account failed.");
+        }
+    }
 
 
     private static DateTime _lastAccountErrorToastTime;

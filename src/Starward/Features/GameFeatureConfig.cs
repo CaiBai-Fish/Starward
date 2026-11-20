@@ -103,6 +103,7 @@ internal partial class GameFeatureConfig
     {
         SupportedPages = [nameof(GameLauncherPage), nameof(GameSettingPage), nameof(ScreenshotPage)],
         InGameNoticesWindow = true,
+        SupportDailyNote = true,
     };
 
 

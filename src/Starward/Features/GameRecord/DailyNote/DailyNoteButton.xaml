@@ -103,6 +103,22 @@
                         </StackPanel>
                     </StackPanel>
 
+                    <!--  明日方舟角色信息  -->
+                    <StackPanel x:Name="StackPanel_ArknightsHeader"
+                                x:Load="{x:Bind IsArknightsEnabled}"
+                                Orientation="Horizontal"
+                                Spacing="12">
+                        <Image Width="40"
+                               Height="40"
+                               Source="ms-appx:///Assets/Image/icon_arknights.png" />
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="{x:Bind ArknightsDailyNote.RoleName}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                <Run Text="UID " /><Run Text="{x:Bind ArknightsDailyNote.Uid}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+
 
                     <MenuFlyoutSeparator Grid.Row="1" Margin="0,8,0,8" />
 
@@ -114,6 +130,15 @@
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                Text="{x:Bind ErrorMessage}"
                                TextWrapping="Wrap" />
+
+
+                    <Button x:Name="Button_LoginArknights"
+                            Grid.Row="2"
+                            Margin="0,4,0,4"
+                            HorizontalAlignment="Center"
+                            Click="Button_LoginArknights_Click"
+                            Content="登录鹰角账号"
+                            Visibility="Collapsed" />
 
 
                     <!--  崩坏3  -->
@@ -826,6 +851,99 @@
                         </StackPanel>
                     </Grid>
 
+
+
+                    <!--  明日方舟  -->
+                    <Grid x:Name="Grid_Arknights"
+                          Grid.Row="2"
+                          MinWidth="220"
+                          x:Load="{x:Bind IsArknightsEnabled}"
+                          Visibility="{x:Bind ArknightsDailyNote, Converter={StaticResource ObjectToVisibilityConverter}}">
+                        <StackPanel Spacing="6">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Image Width="20"
+                                       Height="20"
+                                       Source="ms-appx:///Assets/Image/icon_arknights.png" />
+                                <TextBlock VerticalAlignment="Center" FontSize="15">
+                                    <Run Text="{x:Bind ArknightsDailyNote.CurrentAp}" /><Run Text=" / " /><Run Text="{x:Bind ArknightsDailyNote.MaxAp}" />
+                                </TextBlock>
+                                <TextBlock VerticalAlignment="Bottom"
+                                           FontSize="12"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="理智" />
+                            </StackPanel>
+                            <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                <Run Text="回复时间  " /><Run Text="{x:Bind ArknightsDailyNote.RecoverHours}" /><Run Text="h " /><Run Text="{x:Bind ArknightsDailyNote.RecoverMinutes}" /><Run Text="min" />
+                            </TextBlock>
+                            <MenuFlyoutSeparator Margin="0,2,0,2" />
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Text="日常任务" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind ArknightsDailyNote.DailyCurrent}" /><Run Text=" / " /><Run Text="{x:Bind ArknightsDailyNote.DailyMax}" />
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Text="每周任务" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind ArknightsDailyNote.WeeklyCurrent}" /><Run Text=" / " /><Run Text="{x:Bind ArknightsDailyNote.WeeklyMax}" />
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Text="招募" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind ArknightsDailyNote.RecruitCurrent}" /><Run Text=" / " /><Run Text="{x:Bind ArknightsDailyNote.RecruitMax}" />
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Text="剿灭" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind ArknightsDailyNote.CampaignCurrent}" /><Run Text=" / " /><Run Text="{x:Bind ArknightsDailyNote.CampaignMax}" />
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Text="主线进度" />
+                                <TextBlock Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           Text="{x:Bind ArknightsDailyNote.MainStage}" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="8" Visibility="{x:Bind ArknightsDailyNote.HasTraining, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Text="训练室" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind ArknightsDailyNote.TrainingCharName}" /><Run Text="  " /><Run Text="{x:Bind ArknightsDailyNote.TrainingRemain}" />
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
 
                 </Grid>
             </Flyout>

@@ -80,6 +80,7 @@ public static partial class AppConfig
             sc.AddSingleton<GenshinBeyondGachaClient>();
             sc.AddSingleton<GenshinBeyondGachaService>();
             sc.AddSingleton<EndfieldGachaService>();
+        sc.AddSingleton<Starward.Features.GameRecord.DailyNote.ArknightsDailyNoteService>();
 
             sc.AddSingleton<HoyolabClient>();
             sc.AddSingleton<HyperionClient>();
