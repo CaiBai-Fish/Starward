@@ -3,6 +3,7 @@ using Starward.Core.HoYoPlay;
 using Starward.Features.Gacha;
 using Starward.Features.Gacha.Endfield;
 using Starward.Features.GameLauncher;
+using Starward.Features.GameRecord.ArknightsRecord;
 using Starward.Features.GameRecord;
 using Starward.Features.GameSetting;
 using Starward.Features.Screenshot;
@@ -101,7 +102,7 @@ internal partial class GameFeatureConfig
 
     private static readonly GameFeatureConfig arknights_cn = new()
     {
-        SupportedPages = [nameof(GameLauncherPage), nameof(GameSettingPage), nameof(ScreenshotPage)],
+        SupportedPages = [nameof(GameLauncherPage), nameof(GameSettingPage), nameof(ScreenshotPage), nameof(ArknightsRecordPage)],
         InGameNoticesWindow = true,
         SupportDailyNote = true,
     };

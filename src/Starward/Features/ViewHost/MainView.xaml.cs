@@ -12,6 +12,7 @@ using Starward.Features.Gacha.Endfield;
 using Starward.Features.GameLauncher;
 using Starward.Features.GamepadControl;
 using Starward.Features.GameRecord;
+using Starward.Features.GameRecord.ArknightsRecord;
 using Starward.Features.GameSetting;
 using Starward.Features.RPC;
 using Starward.Features.Screenshot;
@@ -143,6 +144,7 @@ public sealed partial class MainView : UserControl
         NavigationViewItem_SelfQuery.Visibility = (CurrentGameFeatureConfig.SupportedPages.Contains(nameof(SelfQueryPage)) ||
                                                      CurrentGameFeatureConfig.SupportedPages.Contains(nameof(EndfieldAccountRecordPage))).ToVisibility();
         NavigationViewItem_GenshinBeyondGacha.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(GenshinBeyondGachaPage)).ToVisibility();
+        NavigationViewItem_ArknightsRecord.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(ArknightsRecordPage)).ToVisibility();
 
         // 抽卡记录名称
         string gachalogText = CurrentGameId?.GameBiz.Game switch
@@ -208,6 +210,7 @@ public sealed partial class MainView : UserControl
                             ? typeof(EndfieldAccountRecordPage)
                             : typeof(SelfQueryPage),
                         nameof(GenshinBeyondGachaPage) => typeof(GenshinBeyondGachaPage),
+                        nameof(ArknightsRecordPage) => typeof(ArknightsRecordPage),
                         _ => null,
                     };
                     NavigateTo(type);

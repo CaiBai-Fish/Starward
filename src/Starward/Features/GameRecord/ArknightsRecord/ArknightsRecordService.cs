@@ -1,0 +1,411 @@
+using Microsoft.Extensions.Logging;
+using Starward.Features.GameRecord.DailyNote;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Starward.Features.GameRecord.ArknightsRecord;
+
+public sealed class ArknightsRecord
+{
+    public string RoleName { get; set; } = "";
+
+    public string Uid { get; set; } = "";
+
+    public int Level { get; set; }
+
+    public string MainStage { get; set; } = "";
+
+    public int CharCount { get; set; }
+
+    public int SkinCount { get; set; }
+
+    public List<ArknightsCampaignRecord> Campaigns { get; } = [];
+
+    public List<ArknightsTowerRecord> Towers { get; } = [];
+
+    public List<ArknightsRogueRecord> Rogues { get; } = [];
+
+    public List<ArknightsActivityRecord> Activities { get; } = [];
+
+    public ArknightsGarrisonRecord? Garrison { get; set; }
+}
+
+
+public sealed class ArknightsCampaignRecord
+{
+    public string Id { get; set; } = "";
+
+    public int MaxKills { get; set; }
+}
+
+
+public sealed class ArknightsTowerRecord
+{
+    public string Id { get; set; } = "";
+
+    public int Best { get; set; }
+}
+
+
+public sealed class ArknightsRogueRecord
+{
+    public string Id { get; set; } = "";
+
+    public int ClearTime { get; set; }
+
+    public int BpLevel { get; set; }
+
+    public int MedalCurrent { get; set; }
+
+    public int MedalTotal { get; set; }
+}
+
+
+public sealed class ArknightsActivityRecord
+{
+    public string ActId { get; set; } = "";
+
+    public int ClearedStages { get; set; }
+
+    public int TotalStages { get; set; }
+}
+
+
+public sealed class ArknightsGarrisonRecord
+{
+    public string SeasonName { get; set; } = "";
+
+    public DateTimeOffset StartTime { get; set; }
+
+    public DateTimeOffset EndTime { get; set; }
+
+    public List<ArknightsGarrisonMatch> Matches { get; } = [];
+}
+
+
+public sealed class ArknightsGarrisonMatch
+{
+    public long Timestamp { get; set; }
+
+    public int KillCount { get; set; }
+
+    public int Trophy { get; set; }
+
+    public bool Completed { get; set; }
+
+    public string BandId { get; set; } = "";
+}
+
+
+public sealed class ArknightsRecordService
+{
+    private const string SklandAppCode = "4ca99fa6b56cc2ba";
+
+    private const string GrantApi = "https://as.hypergryph.com/user/oauth2/v2/grant";
+
+    private const string CredApi = "https://zonai.skland.com/api/v1/user/auth/generate_cred_by_code";
+
+    private const string SklandApi = "https://zonai.skland.com/api/v1";
+
+    private const string SklandUserAgent = "Skland/1.32.1 (com.hypergryph.skland; build:103201004; Android 33; ) Okhttp/4.11.0";
+
+    private readonly ILogger<ArknightsRecordService> _logger;
+
+    private readonly HttpClient _httpClient;
+
+    private readonly ArknightsDailyNoteService _dailyNoteService;
+
+
+    public ArknightsRecordService(ILogger<ArknightsRecordService> logger, HttpClient httpClient,
+        ArknightsDailyNoteService dailyNoteService)
+    {
+        _logger = logger;
+        _httpClient = httpClient;
+        _dailyNoteService = dailyNoteService;
+    }
+
+
+    public async Task<ArknightsRecord> GetRecordAsync(CancellationToken cancellationToken = default)
+    {
+        ArknightsAccount? account = _dailyNoteService.GetAccount()
+            ?? throw new InvalidOperationException("请先登录明日方舟的鹰角账号。");
+        SklandCredential credential = await GetCredentialAsync(account.LoginToken, cancellationToken);
+        string uid = Uri.EscapeDataString(account.Uid);
+        ArknightsRecord record = new()
+        {
+            Uid = account.Uid,
+            RoleName = account.NickName,
+        };
+        using (JsonDocument player = await GetSignedAsync($"{SklandApi}/game/player/info?uid={uid}", credential, cancellationToken))
+        {
+            ParsePlayer(player.RootElement, record);
+        }
+        try
+        {
+            await LoadGarrisonAsync(record, uid, credential, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Load Arknights garrison record failed.");
+        }
+        return record;
+    }
+
+
+    private async Task<SklandCredential> GetCredentialAsync(string loginToken, CancellationToken cancellationToken)
+    {
+        using HttpRequestMessage grantRequest = new(HttpMethod.Post, GrantApi);
+        grantRequest.Headers.TryAddWithoutValidation("User-Agent", SklandUserAgent);
+        grantRequest.Content = JsonContent.Create(new { token = loginToken, appCode = SklandAppCode, type = 0 });
+        using HttpResponseMessage grantResponse = await _httpClient.SendAsync(grantRequest, cancellationToken);
+        using JsonDocument grant = await JsonDocument.ParseAsync(await grantResponse.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+        if (!grantResponse.IsSuccessStatusCode || GetInt32(grant.RootElement, "status") != 0
+            || !grant.RootElement.TryGetProperty("data", out JsonElement grantData)
+            || !grantData.TryGetProperty("code", out JsonElement codeElement))
+        {
+            throw new InvalidOperationException("获取森空岛授权失败，请重新登录鹰角账号。");
+        }
+        string code = codeElement.GetString() ?? "";
+        using HttpRequestMessage credRequest = new(HttpMethod.Post, CredApi);
+        credRequest.Headers.TryAddWithoutValidation("User-Agent", SklandUserAgent);
+        credRequest.Content = JsonContent.Create(new { kind = 1, code });
+        using HttpResponseMessage credResponse = await _httpClient.SendAsync(credRequest, cancellationToken);
+        using JsonDocument cred = await JsonDocument.ParseAsync(await credResponse.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+        if (!credResponse.IsSuccessStatusCode || cred.RootElement.TryGetProperty("code", out JsonElement credCode) && GetInt32(cred.RootElement, "code") != 0
+            || !cred.RootElement.TryGetProperty("data", out JsonElement credData))
+        {
+            throw new InvalidOperationException("获取森空岛凭证失败，请重新登录鹰角账号。");
+        }
+        return new SklandCredential
+        {
+            Cred = GetString(credData, "cred"),
+            Token = GetString(credData, "token"),
+            UserId = GetString(credData, "userId"),
+        };
+    }
+
+
+    private async Task<JsonDocument> GetSignedAsync(string url, SklandCredential credential, CancellationToken cancellationToken)
+    {
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 1;
+        Uri uri = new(url);
+        string query = uri.Query.TrimStart('?');
+        string headerJson = $"{{\"platform\":\"\",\"timestamp\":\"{timestamp}\",\"dId\":\"\",\"vName\":\"\"}}";
+        string secret = $"{uri.AbsolutePath}{query}{timestamp}{headerJson}";
+        byte[] hash = HMACSHA256.HashData(Encoding.UTF8.GetBytes(credential.Token), Encoding.UTF8.GetBytes(secret));
+        string hexHash = Convert.ToHexString(hash).ToLowerInvariant();
+        string sign = Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(hexHash))).ToLowerInvariant();
+        using HttpRequestMessage request = new(HttpMethod.Get, url);
+        request.Headers.TryAddWithoutValidation("User-Agent", SklandUserAgent);
+        request.Headers.TryAddWithoutValidation("cred", credential.Cred);
+        request.Headers.TryAddWithoutValidation("sign", sign);
+        request.Headers.TryAddWithoutValidation("timestamp", timestamp.ToString(CultureInfo.InvariantCulture));
+        request.Headers.TryAddWithoutValidation("platform", "");
+        request.Headers.TryAddWithoutValidation("dId", "");
+        request.Headers.TryAddWithoutValidation("vName", "");
+        using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"森空岛接口请求失败（HTTP {(int)response.StatusCode}）。");
+        }
+        JsonDocument document = JsonDocument.Parse(body);
+        if (document.RootElement.TryGetProperty("code", out JsonElement code) && GetInt32(document.RootElement, "code") != 0)
+        {
+            string message = GetString(document.RootElement, "message");
+            document.Dispose();
+            throw new InvalidOperationException($"森空岛接口返回错误：{message}");
+        }
+        return document;
+    }
+
+
+    private static void ParsePlayer(JsonElement root, ArknightsRecord record)
+    {
+        if (!root.TryGetProperty("data", out JsonElement data) || data.ValueKind is not JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("森空岛未返回玩家数据。");
+        }
+        JsonElement status = data.TryGetProperty("status", out JsonElement statusElement) ? statusElement : default;
+        record.RoleName = GetString(status, "name", record.RoleName);
+        record.Uid = GetString(status, "uid", record.Uid);
+        record.Level = GetInt32(status, "level");
+        record.MainStage = GetString(status, "mainStageProgress");
+        record.CharCount = GetInt32(status, "charCnt");
+        record.SkinCount = GetInt32(status, "skinCnt");
+        if (data.TryGetProperty("campaign", out JsonElement campaign) && campaign.TryGetProperty("records", out JsonElement campaignRecords))
+        {
+            foreach (JsonElement item in campaignRecords.EnumerateArray())
+            {
+                record.Campaigns.Add(new ArknightsCampaignRecord
+                {
+                    Id = GetString(item, "campaignId"),
+                    MaxKills = GetInt32(item, "maxKills"),
+                });
+            }
+        }
+        if (data.TryGetProperty("tower", out JsonElement tower) && tower.TryGetProperty("records", out JsonElement towerRecords))
+        {
+            foreach (JsonElement item in towerRecords.EnumerateArray())
+            {
+                record.Towers.Add(new ArknightsTowerRecord
+                {
+                    Id = GetString(item, "towerId"),
+                    Best = GetInt32(item, "best"),
+                });
+            }
+        }
+        if (data.TryGetProperty("rogue", out JsonElement rogue) && rogue.TryGetProperty("records", out JsonElement rogueRecords))
+        {
+            foreach (JsonElement item in rogueRecords.EnumerateArray())
+            {
+                JsonElement medal = item.TryGetProperty("medal", out JsonElement medalElement) ? medalElement : default;
+                record.Rogues.Add(new ArknightsRogueRecord
+                {
+                    Id = GetString(item, "rogueId"),
+                    ClearTime = GetInt32(item, "clearTime"),
+                    BpLevel = GetInt32(item, "bpLevel"),
+                    MedalCurrent = GetInt32(medal, "current"),
+                    MedalTotal = GetInt32(medal, "total"),
+                });
+            }
+        }
+        if (data.TryGetProperty("activity", out JsonElement activities) && activities.ValueKind is JsonValueKind.Array)
+        {
+            foreach (JsonElement item in activities.EnumerateArray())
+            {
+                int cleared = 0;
+                int total = 0;
+                if (item.TryGetProperty("zones", out JsonElement zones) && zones.ValueKind is JsonValueKind.Array)
+                {
+                    foreach (JsonElement zone in zones.EnumerateArray())
+                    {
+                        cleared += GetInt32(zone, "clearedStage");
+                        total += GetInt32(zone, "totalStage");
+                    }
+                }
+                record.Activities.Add(new ArknightsActivityRecord
+                {
+                    ActId = GetString(item, "actId"),
+                    ClearedStages = cleared,
+                    TotalStages = total,
+                });
+            }
+        }
+    }
+
+
+    private async Task LoadGarrisonAsync(ArknightsRecord record, string uid, SklandCredential credential,
+        CancellationToken cancellationToken)
+    {
+        using JsonDocument resource = await GetSignedAsync("https://zonai.skland.com/api/ms/game/arknights/garrison/resource", credential, cancellationToken);
+        if (!resource.RootElement.TryGetProperty("data", out JsonElement resourceData)
+            || !resourceData.TryGetProperty("resources", out JsonElement resources)
+            || resources.ValueKind is not JsonValueKind.Array
+            || !resources.EnumerateArray().Any())
+        {
+            return;
+        }
+        JsonElement first = resources[0];
+        JsonElement version = first.TryGetProperty("versionInfo", out JsonElement versionElement) ? versionElement : default;
+        string activityId = GetString(version, "activityId");
+        if (string.IsNullOrWhiteSpace(activityId))
+        {
+            return;
+        }
+        ArknightsGarrisonRecord garrison = new()
+        {
+            SeasonName = GetString(version, "seasonName"),
+            StartTime = ParseUnixTime(GetString(version, "startTime")),
+            EndTime = ParseUnixTime(GetString(version, "endTime")),
+        };
+        using JsonDocument info = await GetSignedAsync(
+            $"https://zonai.skland.com/api/ms/game/arknights/garrison/info?uid={uid}&activityId={Uri.EscapeDataString(activityId)}",
+            credential, cancellationToken);
+        if (info.RootElement.TryGetProperty("data", out JsonElement infoData)
+            && infoData.TryGetProperty("history", out JsonElement history)
+            && history.TryGetProperty("records", out JsonElement records)
+            && records.ValueKind is JsonValueKind.Array)
+        {
+            foreach (JsonElement item in records.EnumerateArray())
+            {
+                string id = GetString(item, "id");
+                long timestamp = 0;
+                int dash = id.LastIndexOf('-');
+                if (dash >= 0)
+                {
+                    long.TryParse(id[(dash + 1)..], out timestamp);
+                }
+                garrison.Matches.Add(new ArknightsGarrisonMatch
+                {
+                    Timestamp = timestamp,
+                    KillCount = GetInt32(item, "killCnt"),
+                    Trophy = GetInt32(item, "trophyAfter"),
+                    Completed = GetInt32(item, "completeState") == 1,
+                    BandId = GetString(item, "bandId"),
+                });
+            }
+        }
+        record.Garrison = garrison;
+    }
+
+
+    private static DateTimeOffset ParseUnixTime(string value)
+    {
+        return long.TryParse(value, out long seconds) && seconds > 0
+            ? DateTimeOffset.FromUnixTimeSeconds(seconds)
+            : DateTimeOffset.MinValue;
+    }
+
+
+    private static string GetString(JsonElement element, string name, string defaultValue = "")
+    {
+        if (element.ValueKind is JsonValueKind.Object && element.TryGetProperty(name, out JsonElement value))
+        {
+            return value.ValueKind switch
+            {
+                JsonValueKind.String => value.GetString() ?? defaultValue,
+                JsonValueKind.Number => value.GetRawText(),
+                _ => defaultValue,
+            };
+        }
+        return defaultValue;
+    }
+
+
+    private static int GetInt32(JsonElement element, string name, int defaultValue = 0)
+    {
+        if (element.ValueKind is JsonValueKind.Object && element.TryGetProperty(name, out JsonElement value))
+        {
+            if (value.ValueKind is JsonValueKind.Number && value.TryGetInt32(out int number))
+            {
+                return number;
+            }
+            if (value.ValueKind is JsonValueKind.String && int.TryParse(value.GetString(), out number))
+            {
+                return number;
+            }
+        }
+        return defaultValue;
+    }
+
+
+    private sealed class SklandCredential
+    {
+        public string Cred { get; set; } = "";
+
+        public string Token { get; set; } = "";
+
+        public string UserId { get; set; } = "";
+    }
+
+}
