@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Starward.Frameworks;
 using System;
@@ -94,6 +95,33 @@ public sealed partial class EndfieldAccountRecordPage : PageBase
     protected override void OnLoaded()
     {
         LoadAccounts();
+    }
+
+
+
+    /// <summary>
+    /// 嵌入到森空岛工具箱时隐藏页面自带的标题栏，避免与宿主页面重复。
+    /// </summary>
+    public void SetEmbedded(bool embedded)
+    {
+        Panel_Header.Visibility = embedded ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+
+
+    /// <summary>
+    /// 供宿主页面刷新使用：已登录时同步在线记录，否则重新读取本地记录。
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        if (SelectedAccount is not null && _service.HasSavedLoginToken(SelectedAccount.AccountKey))
+        {
+            await ExecuteAccountRecordSyncAsync(SelectedAccount);
+        }
+        else
+        {
+            LoadAccounts();
+        }
     }
 
 

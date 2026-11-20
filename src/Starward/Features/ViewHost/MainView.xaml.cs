@@ -141,8 +141,7 @@ public sealed partial class MainView : UserControl
         NavigationViewItem_GachaLog.Visibility = (CurrentGameFeatureConfig.SupportedPages.Contains(nameof(GachaLogPage)) ||
                                                    CurrentGameFeatureConfig.SupportedPages.Contains(nameof(EndfieldGachaPage))).ToVisibility();
         NavigationViewItem_HoyolabToolbox.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(GameRecordPage)).ToVisibility();
-        NavigationViewItem_SelfQuery.Visibility = (CurrentGameFeatureConfig.SupportedPages.Contains(nameof(SelfQueryPage)) ||
-                                                     CurrentGameFeatureConfig.SupportedPages.Contains(nameof(EndfieldAccountRecordPage))).ToVisibility();
+        NavigationViewItem_SelfQuery.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(SelfQueryPage)).ToVisibility();
         NavigationViewItem_GenshinBeyondGacha.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(GenshinBeyondGachaPage)).ToVisibility();
         NavigationViewItem_ArknightsRecord.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(ArknightsRecordPage)).ToVisibility();
 
@@ -206,9 +205,7 @@ public sealed partial class MainView : UserControl
                             ? typeof(EndfieldGachaPage)
                             : typeof(GachaLogPage),
                         nameof(GameRecordPage) => typeof(GameRecordPage),
-                        nameof(SelfQueryPage) => CurrentGameId?.GameBiz.Game == GameBiz.endfield
-                            ? typeof(EndfieldAccountRecordPage)
-                            : typeof(SelfQueryPage),
+                        nameof(SelfQueryPage) => typeof(SelfQueryPage),
                         nameof(GenshinBeyondGachaPage) => typeof(GenshinBeyondGachaPage),
                         nameof(ArknightsRecordPage) => typeof(ArknightsRecordPage),
                         _ => null,

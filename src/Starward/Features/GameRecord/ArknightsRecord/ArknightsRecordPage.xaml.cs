@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Navigation;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Features.Gacha.Endfield;
@@ -40,15 +41,24 @@ public sealed partial class ArknightsRecordPage : Page
     public ArknightsRecordPage()
     {
         InitializeComponent();
-        Loaded += ArknightsRecordPage_Loaded;
     }
 
 
     private Dictionary<string, List<ArknightsRecordItemView>> _sections = [];
 
-    private async void ArknightsRecordPage_Loaded(object sender, RoutedEventArgs e)
+
+    protected override void OnNavigatedTo(NavigationEventArgs e)
     {
-        await LoadRecordAsync();
+        base.OnNavigatedTo(e);
+        if (e.Parameter is GameId id)
+        {
+            CurrentGameId = id;
+        }
+        else if (e.Parameter is GameBiz biz)
+        {
+            CurrentGameId = GameId.FromGameBiz(biz);
+        }
+        _ = LoadRecordAsync();
     }
 
 
@@ -58,22 +68,41 @@ public sealed partial class ArknightsRecordPage : Page
         {
             ProgressRing_Loading.IsActive = true;
             TextBlock_Error.Text = "";
+            NavigationViewItem_EndfieldAccount.Visibility = Visibility.Collapsed;
+            NavigationViewItem_EndfieldCrisis.Visibility = Visibility.Collapsed;
+            NavigationViewItem_EndfieldWar.Visibility = Visibility.Collapsed;
+            NavigationViewItem_EndfieldMonument.Visibility = Visibility.Collapsed;
+            Frame_EndfieldAccount.Visibility = Visibility.Collapsed;
+            ScrollViewer_Records.Visibility = Visibility.Visible;
+            Border_EndfieldGuide.Visibility = Visibility.Collapsed;
+            Items_Records.ItemsSource = null;
+            Button_LoginArknights.Visibility = Visibility.Collapsed;
+            Button_AccountList.Visibility = Visibility.Collapsed;
+            foreach (NavigationViewItem item in NavigationView_Records.MenuItems.OfType<NavigationViewItem>())
+            {
+                if (item.Tag is string tag && tag is "garrison" or "rogue" or "activity" or "h5")
+                {
+                    item.Visibility = Visibility.Visible;
+                }
+            }
             if (CurrentGameId?.GameBiz.Game is GameBiz.endfield)
             {
                 foreach (NavigationViewItem item in NavigationView_Records.MenuItems.OfType<NavigationViewItem>())
                 {
-                    if (item.Tag is string tag && tag is "garrison" or "rogue" or "activity")
+                    if (item.Tag is string tag && tag is "garrison" or "rogue" or "activity" or "h5")
                     {
                         item.Visibility = Visibility.Collapsed;
                     }
                 }
-                NavigationView_Records.SelectedItem = NavigationView_Records.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => (x.Tag as string) == "h5");
-                Items_Records.ItemsSource = new List<ArknightsRecordItemView>
-                {
-                    new() { Title = "终末地游戏数据", Subtitle = "点击左侧「战绩」打开森空岛 H5" },
-                };
+                NavigationViewItem_EndfieldAccount.Visibility = Visibility.Visible;
+                NavigationViewItem_EndfieldCrisis.Visibility = Visibility.Visible;
+                NavigationViewItem_EndfieldWar.Visibility = Visibility.Visible;
+                NavigationViewItem_EndfieldMonument.Visibility = Visibility.Visible;
+                NavigationView_Records.SelectedItem = NavigationViewItem_EndfieldAccount;
                 TextBlock_RoleName.Text = "森空岛工具箱";
                 TextBlock_RoleInfo.Text = "终末地";
+                Image_Avatar.Source = new BitmapImage(new Uri("ms-appx:///Assets/Image/icon_endfield.png"));
+                ShowEndfieldAccount();
                 ProgressRing_Loading.IsActive = false;
                 return;
             }
@@ -94,7 +123,7 @@ public sealed partial class ArknightsRecordPage : Page
                 ["rogue"] = BuildRogues(record),
                 ["activity"] = BuildActivityRecords(record),
             };
-            if (NavigationView_Records.SelectedItem is not NavigationViewItem)
+            if (NavigationView_Records.SelectedItem is not NavigationViewItem selected || selected.Tag is "endfield_account" or "endfield_crisis" or "endfield_war" or "endfield_monument")
             {
                 NavigationView_Records.SelectedItem = NavigationViewItem_Garrison;
             }
@@ -116,6 +145,9 @@ public sealed partial class ArknightsRecordPage : Page
 
     private void ShowSection(string key)
     {
+        Frame_EndfieldAccount.Visibility = Visibility.Collapsed;
+        ScrollViewer_Records.Visibility = Visibility.Visible;
+        Border_EndfieldGuide.Visibility = Visibility.Collapsed;
         Items_Records.ItemsSource = _sections.TryGetValue(key, out List<ArknightsRecordItemView>? list) ? list : [];
     }
 
@@ -131,12 +163,68 @@ public sealed partial class ArknightsRecordPage : Page
             ArknightsGameDataWindow.ShowWindow(CurrentGameId?.GameBiz.Game is GameBiz.endfield ? "endfield" : "arknights");
             return;
         }
+        if (key == "endfield_account")
+        {
+            ShowEndfieldAccount();
+            return;
+        }
+        if (key is "endfield_crisis" or "endfield_war" or "endfield_monument")
+        {
+            ShowEndfieldGuide(key);
+            return;
+        }
         ShowSection(key);
+    }
+
+
+    private void ShowEndfieldGuide(string key)
+    {
+        (string title, string text) = key switch
+        {
+            "endfield_war" => ("战争回响", "战争回响的关卡进度与评分由森空岛终末地战绩页提供，客户端暂未接入本地解析。"),
+            "endfield_monument" => ("影拓丰碑", "影拓丰碑的通关记录与收藏进度需在森空岛终末地战绩页查看。"),
+            _ => ("危机合约", "危机合约的赛季记录、通关等级与奖励进度需在森空岛终末地战绩页查看。"),
+        };
+        Frame_EndfieldAccount.Visibility = Visibility.Collapsed;
+        ScrollViewer_Records.Visibility = Visibility.Visible;
+        Items_Records.ItemsSource = null;
+        TextBlock_EndfieldGuideTitle.Text = title;
+        TextBlock_EndfieldGuideText.Text = text;
+        Border_EndfieldGuide.Visibility = Visibility.Visible;
+    }
+
+
+    private void Button_EndfieldGuideOpen_Click(object sender, RoutedEventArgs e)
+    {
+        ArknightsGameDataWindow.ShowWindow("endfield");
+    }
+
+
+    private void ShowEndfieldAccount()
+    {
+        ScrollViewer_Records.Visibility = Visibility.Collapsed;
+        Frame_EndfieldAccount.Visibility = Visibility.Visible;
+        if (Frame_EndfieldAccount.Content is not EndfieldAccountRecordPage)
+        {
+            Frame_EndfieldAccount.Navigate(typeof(EndfieldAccountRecordPage));
+        }
+        if (Frame_EndfieldAccount.Content is EndfieldAccountRecordPage page)
+        {
+            page.SetEmbedded(true);
+        }
     }
 
 
     private async void Button_Refresh_Click(object sender, RoutedEventArgs e)
     {
+        if (CurrentGameId?.GameBiz.Game is GameBiz.endfield)
+        {
+            if (Frame_EndfieldAccount.Content is EndfieldAccountRecordPage page)
+            {
+                await page.RefreshAsync();
+            }
+            return;
+        }
         await LoadRecordAsync();
     }
 

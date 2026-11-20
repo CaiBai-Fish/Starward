@@ -122,7 +122,6 @@ internal partial class GameFeatureConfig
             nameof(GameSettingPage),
             nameof(ScreenshotPage),
             nameof(EndfieldGachaPage),
-            nameof(EndfieldAccountRecordPage),
             nameof(ArknightsRecordPage),
         ],
         SupportHardLink = true,

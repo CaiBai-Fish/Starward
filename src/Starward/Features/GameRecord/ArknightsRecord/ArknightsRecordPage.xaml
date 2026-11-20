@@ -153,6 +153,38 @@
                         <ImageIcon Source="ms-appx:///Assets/Image/icon_skland_record.png" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Name="NavigationViewItem_EndfieldAccount"
+                                    Tag="endfield_account"
+                                    Content="账号记录"
+                                    Visibility="Collapsed">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8C7;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="NavigationViewItem_EndfieldCrisis"
+                                    Tag="endfield_crisis"
+                                    Content="危机合约"
+                                    Visibility="Collapsed">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7BA;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="NavigationViewItem_EndfieldWar"
+                                    Tag="endfield_war"
+                                    Content="战争回响"
+                                    Visibility="Collapsed">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7C3;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="NavigationViewItem_EndfieldMonument"
+                                    Tag="endfield_monument"
+                                    Content="影拓丰碑"
+                                    Visibility="Collapsed">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8A5;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem x:Name="NavigationViewItem_Garrison" Tag="garrison" Content="卫戍协议">
                     <NavigationViewItem.Icon>
                         <ImageIcon Source="ms-appx:///Assets/Image/icon_arknights_garrison.png" />
@@ -184,7 +216,7 @@
             </NavigationView.PaneFooter>
 
             <Grid>
-                <ScrollViewer>
+                <ScrollViewer x:Name="ScrollViewer_Records">
                     <StackPanel Padding="24,16,24,24" Spacing="12">
                         <ProgressRing x:Name="ProgressRing_Loading"
                                       Width="32"
@@ -194,9 +226,34 @@
                         <TextBlock x:Name="TextBlock_Error"
                                    Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                    TextWrapping="Wrap" />
+                        <Border x:Name="Border_EndfieldGuide"
+                                Padding="20"
+                                Background="{ThemeResource CustomOverlayAcrylicBrush}"
+                                CornerRadius="8"
+                                Shadow="{ThemeResource ThemeShadow}"
+                                Translation="0,0,16"
+                                Visibility="Collapsed">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <FontIcon FontSize="18" Glyph="&#xE946;" />
+                                    <TextBlock x:Name="TextBlock_EndfieldGuideTitle"
+                                               VerticalAlignment="Center"
+                                               FontSize="16"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                                <TextBlock x:Name="TextBlock_EndfieldGuideText"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                                <Button x:Name="Button_EndfieldGuideOpen"
+                                        Click="Button_EndfieldGuideOpen_Click"
+                                        Content="在森空岛查看"
+                                        Style="{ThemeResource AccentButtonStyle}" />
+                            </StackPanel>
+                        </Border>
                         <ItemsControl x:Name="Items_Records" ItemTemplate="{StaticResource RecordItemTemplate}" />
                     </StackPanel>
                 </ScrollViewer>
+                <Frame x:Name="Frame_EndfieldAccount" Visibility="Collapsed" />
             </Grid>
         </NavigationView>
     </Grid>

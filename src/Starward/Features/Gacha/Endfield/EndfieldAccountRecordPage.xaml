@@ -24,7 +24,8 @@
             <RowDefinition />
         </Grid.RowDefinitions>
 
-        <StackPanel Margin="24,0,0,0"
+        <StackPanel x:Name="Panel_Header"
+                    Margin="24,0,0,0"
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="10">

@@ -48,12 +48,28 @@ public sealed partial class ArknightsGameDataWindow : WindowEx
         {
             _instance = new ArknightsGameDataWindow();
         }
-        if (_instance.GameKey != game)
+        _instance.GameKey = game;
+        _instance.Title = game == "endfield" ? "终末地战绩" : "明日方舟战绩";
+        if (_instance._core is not null)
         {
-            _instance.GameKey = game;
-            _instance._core?.Navigate(BuildGameDataUrl(game));
+            _instance.NavigateToGame(_instance._core, game);
         }
         _instance.Activate();
+    }
+
+
+    private void NavigateToGame(Microsoft.Web.WebView2.Core.CoreWebView2 core, string game)
+    {
+        string folder = AppConfig.UserDataFolder ?? AppContext.BaseDirectory;
+        string snapshot = Path.Combine(folder, "ArknightsGameData.html");
+        if (game == "arknights" && File.Exists(snapshot))
+        {
+            core.Navigate(new Uri(snapshot).AbsoluteUri);
+        }
+        else
+        {
+            core.Navigate(BuildGameDataUrl(game));
+        }
     }
 
 
@@ -125,7 +141,7 @@ public sealed partial class ArknightsGameDataWindow : WindowEx
                 await core.AddScriptToExecuteOnDocumentCreatedAsync(cacheScript);
             }
             WebView_GameData.Visibility = Visibility.Visible;
-            core.Navigate(BuildGameDataUrl(GameKey));
+            NavigateToGame(core, GameKey);
         }
         catch
         {
