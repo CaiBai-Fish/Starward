@@ -21,9 +21,9 @@ namespace Starward.RPC.GameInstall;
 /// </summary>
 internal sealed class YostarArknightsGameInstallService
 {
-    private const int DownloadConcurrency = 4;
+    private const int DownloadConcurrency = 3;
 
-    private const int MaxAttempts = 3;
+    private const int MaxAttempts = 5;
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
@@ -81,6 +81,7 @@ internal sealed class YostarArknightsGameInstallService
         }
 
         List<YostarManifestFile> downloadFiles = [];
+        bool noLocalManifest = local.Files.Count == 0;
         foreach (YostarManifestFile file in manifest.Files)
         {
             string key = Normalize(file.Path);
@@ -88,9 +89,19 @@ internal sealed class YostarArknightsGameInstallService
                 && string.Equals(localFile.Hash, file.Hash, StringComparison.Ordinal)
                 && localFile.Size == file.Size
                 && File.Exists(GetTargetPath(installPath, file.Path));
-            if (context.Operation is GameInstallOperation.Repair)
+            if (!upToDate && noLocalManifest)
             {
-                upToDate = upToDate && File.Exists(GetTargetPath(installPath, file.Path));
+                // 没有本地 manifest（首次安装或中断后）时，按大小 + CRC 复用已下载的文件。
+                string targetPath = GetTargetPath(installPath, file.Path);
+                if (File.Exists(targetPath) && new FileInfo(targetPath).Length == file.Size)
+                {
+                    string crc = await Crc64Xz.ComputeFileAsync(targetPath, cancellationToken);
+                    upToDate = string.Equals(crc, file.Hash, StringComparison.Ordinal);
+                    if (!upToDate)
+                    {
+                        File.Delete(targetPath);
+                    }
+                }
             }
             if (!upToDate)
             {
@@ -232,7 +243,11 @@ internal sealed class YostarArknightsGameInstallService
                     currentLength = 0;
                 }
                 string url = YostarGameClient.BuildFileUrl(domain, source, file.Path);
-                using HttpRequestMessage request = new(HttpMethod.Get, url);
+                using HttpRequestMessage request = new(HttpMethod.Get, url)
+                {
+                    Version = HttpVersion.Version11,
+                    VersionPolicy = HttpVersionPolicy.RequestVersionExact,
+                };
                 if (currentLength > 0)
                 {
                     request.Headers.Range = new RangeHeaderValue(currentLength, null);

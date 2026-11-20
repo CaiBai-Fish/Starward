@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
@@ -41,25 +42,49 @@ public sealed class YostarGameClient
 
     private async Task<JsonElement> GetDataAsync(string path, CancellationToken cancellationToken)
     {
-        using HttpRequestMessage request = new(HttpMethod.Get, YostarGameConstants.ApiBaseUrl + path);
-        request.Headers.TryAddWithoutValidation("Authorization", CreateAuthorization());
-        request.Headers.TryAddWithoutValidation("Content-Type", "application/json;charset=UTF-8");
-        using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        JsonElement root = document.RootElement;
-        int code = root.TryGetProperty("code", out JsonElement codeElement) ? codeElement.GetInt32() : -1;
-        if (code != 200)
+        Exception? lastError = null;
+        for (int attempt = 1; attempt <= 3; attempt++)
         {
-            string message = root.TryGetProperty("msg", out JsonElement msgElement) ? msgElement.GetString() ?? "" : "";
-            throw new InvalidDataException($"Yostar launcher API returned {code}: {message}");
+            try
+            {
+                using HttpRequestMessage request = new(HttpMethod.Get, YostarGameConstants.ApiBaseUrl + path)
+                {
+                    Version = HttpVersion.Version11,
+                    VersionPolicy = HttpVersionPolicy.RequestVersionExact,
+                };
+                request.Headers.TryAddWithoutValidation("Authorization", CreateAuthorization());
+                request.Headers.TryAddWithoutValidation("Content-Type", "application/json;charset=UTF-8");
+                using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+                await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+                JsonElement root = document.RootElement;
+                int code = root.TryGetProperty("code", out JsonElement codeElement) ? codeElement.GetInt32() : -1;
+                if (code != 200)
+                {
+                    string message = root.TryGetProperty("msg", out JsonElement msgElement) ? msgElement.GetString() ?? "" : "";
+                    throw new InvalidDataException($"Yostar launcher API returned {code}: {message}");
+                }
+                if (!root.TryGetProperty("data", out JsonElement data))
+                {
+                    throw new InvalidDataException("Yostar launcher API returned no data.");
+                }
+                return data.Clone();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                if (attempt < 3)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
+                }
+            }
         }
-        if (!root.TryGetProperty("data", out JsonElement data))
-        {
-            throw new InvalidDataException("Yostar launcher API returned no data.");
-        }
-        return data.Clone();
+        throw lastError ?? new InvalidDataException("Failed to request Yostar launcher API.");
     }
 
 

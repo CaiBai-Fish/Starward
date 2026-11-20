@@ -104,7 +104,16 @@ public static class RpcRunner
         });
         builder.Services.AddHttpClient<HoYoPlayClient>().AddPolicyHandler(GetHttpRetryPolicy());
         builder.Services.AddHttpClient<HypergryphLauncherClient>().AddPolicyHandler(GetHttpRetryPolicy());
-        builder.Services.AddHttpClient<Starward.Core.Yostar.YostarGameClient>().AddPolicyHandler(GetHttpRetryPolicy());
+        builder.Services.AddHttpClient<Starward.Core.Yostar.YostarGameClient>()
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AutomaticDecompression = DecompressionMethods.All,
+                // Yostar 的国际线路经过系统代理时 TLS 连接不稳定，改为直连。
+                UseProxy = false,
+                ConnectTimeout = TimeSpan.FromSeconds(20),
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            })
+            .AddPolicyHandler(GetHttpRetryPolicy());
 
 
         builder.Logging.ClearProviders();
