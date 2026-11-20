@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Starward.Core.HoYoPlay;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,22 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace Starward.Features.GameRecord.ArknightsRecord;
+
+public sealed class ArknightsRecordItemView
+{
+    public string Title { get; set; } = "";
+
+    public string Subtitle { get; set; } = "";
+
+    public string Value { get; set; } = "";
+
+    public bool HasProgress { get; set; }
+
+    public double ProgressValue { get; set; }
+
+    public double ProgressMaximum { get; set; } = 1;
+}
+
 
 public sealed partial class ArknightsRecordPage : Page
 {
@@ -30,39 +47,25 @@ public sealed partial class ArknightsRecordPage : Page
             ArknightsRecord record = await _service.GetRecordAsync();
             TextBlock_RoleName.Text = record.RoleName;
             TextBlock_RoleInfo.Text = $"UID {record.Uid} · 等级 {record.Level} · 主线 {record.MainStage} · 干员 {record.CharCount} · 时装 {record.SkinCount}";
-            if (record.Garrison is ArknightsGarrisonRecord garrison)
+            if (!string.IsNullOrWhiteSpace(record.AvatarUrl))
             {
-                string time = garrison.StartTime == DateTimeOffset.MinValue
-                    ? ""
-                    : $"{garrison.StartTime.ToLocalTime():yyyy-MM-dd} - {garrison.EndTime.ToLocalTime():yyyy-MM-dd}";
-                TextBlock_Garrison.Text = $"{garrison.SeasonName}  {time}  共 {garrison.Matches.Count} 场";
-                ItemsControl_Garrison.ItemsSource = garrison.Matches
-                                                           .OrderByDescending(x => x.Timestamp)
-                                                           .Take(10)
-                                                           .Select(x => $"{DateTimeOffset.FromUnixTimeSeconds(x.Timestamp).ToLocalTime():MM-dd HH:mm}  击杀 {x.KillCount}  奖杯 {x.Trophy}  {(x.Completed ? "完成" : "未完成")}")
-                                                           .ToList();
+                try
+                {
+                    Image_Avatar.Source = new BitmapImage(new Uri(record.AvatarUrl));
+                }
+                catch { }
             }
             else
             {
-                TextBlock_Garrison.Text = "暂无卫戍协议战绩";
+                Image_Avatar.Visibility = Visibility.Collapsed;
             }
-            ItemsControl_Activities.ItemsSource = record.Activities
-                                                      .OrderByDescending(x => x.ClearedStages)
-                                                      .Take(10)
-                                                      .Select(x => $"{x.ActId}  关卡 {x.ClearedStages}/{x.TotalStages}")
-                                                      .ToList();
-            ItemsControl_Campaigns.ItemsSource = record.Campaigns
-                                                     .OrderByDescending(x => x.MaxKills)
-                                                     .Take(10)
-                                                     .Select(x => $"{x.Id}  最高击杀 {x.MaxKills}")
-                                                     .ToList();
-            ItemsControl_Towers.ItemsSource = record.Towers
-                                                  .OrderByDescending(x => x.Best)
-                                                  .Select(x => $"{x.Id}  最佳记录 {x.Best}")
-                                                  .ToList();
-            ItemsControl_Rogues.ItemsSource = record.Rogues
-                                                  .Select(x => $"{x.Id}  通关 {x.ClearTime} 次 · 等级 {x.BpLevel} · 奖章 {x.MedalCurrent}/{x.MedalTotal}")
-                                                  .ToList();
+            Items_Garrison.ItemsSource = BuildGarrison(record);
+            Items_Activities.ItemsSource = BuildActivities(record);
+            Items_Rogues.ItemsSource = BuildRogues(record);
+            Items_Sandboxes.ItemsSource = BuildSandboxes(record);
+            Items_Towers.ItemsSource = BuildTowers(record);
+            Items_Campaigns.ItemsSource = BuildCampaigns(record);
+            Items_BossRushes.ItemsSource = BuildBossRushes(record);
             Panel_Content.Visibility = Visibility.Visible;
         }
         catch (Exception ex)
@@ -73,6 +76,172 @@ public sealed partial class ArknightsRecordPage : Page
         {
             ProgressRing_Loading.IsActive = false;
         }
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildGarrison(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        if (record.Garrison is ArknightsGarrisonRecord garrison)
+        {
+            foreach (ArknightsGarrisonMatch match in garrison.Matches.OrderByDescending(x => x.Timestamp).Take(30))
+            {
+                string time = match.Timestamp > 0
+                    ? DateTimeOffset.FromUnixTimeSeconds(match.Timestamp).ToLocalTime().ToString("MM-dd HH:mm")
+                    : "";
+                list.Add(new ArknightsRecordItemView
+                {
+                    Title = $"{garrison.SeasonName} · {time}",
+                    Subtitle = $"击杀 {match.KillCount} · 奖杯 {match.Trophy}",
+                    Value = match.Completed ? "完成" : "未完成",
+                });
+            }
+            if (list.Count == 0)
+            {
+                list.Add(new ArknightsRecordItemView { Title = garrison.SeasonName, Subtitle = "当前活动暂无战绩" });
+            }
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无卫戍协议战绩" });
+        }
+        return list;
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildActivities(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        foreach (ArknightsActivityRecord activity in record.Activities.OrderByDescending(x => x.StartTime))
+        {
+            string time = activity.StartTime == DateTimeOffset.MinValue
+                ? ""
+                : $"{activity.StartTime.ToLocalTime():yyyy-MM-dd} - {activity.EndTime.ToLocalTime():yyyy-MM-dd}";
+            bool completed = activity.TotalStages > 0 && activity.ClearedStages >= activity.TotalStages;
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = activity.Name,
+                Subtitle = string.IsNullOrWhiteSpace(time) ? "SideStory" : time,
+                Value = completed ? "已完成" : "进行中",
+                HasProgress = activity.TotalStages > 0,
+                ProgressValue = activity.ClearedStages,
+                ProgressMaximum = Math.Max(1, activity.TotalStages),
+            });
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无 SideStory 记录" });
+        }
+        return list;
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildRogues(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        foreach (ArknightsRogueRecord rogue in record.Rogues)
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = rogue.Name,
+                Subtitle = $"通关 {rogue.ClearTime} 次 · 等级 {rogue.BpLevel}",
+                Value = $"奖章 {rogue.MedalCurrent}/{rogue.MedalTotal}",
+                HasProgress = rogue.MedalTotal > 0,
+                ProgressValue = rogue.MedalCurrent,
+                ProgressMaximum = Math.Max(1, rogue.MedalTotal),
+            });
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无集成战略记录" });
+        }
+        return list;
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildSandboxes(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        foreach (ArknightsSandboxRecord sandbox in record.Sandboxes)
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = sandbox.Name,
+                Subtitle = $"基地等级 {sandbox.BaseLv} · 击杀 {sandbox.EnemyKill}",
+                Value = $"生存 {sandbox.MaxDay} 天",
+                HasProgress = sandbox.SubQuestTotal > 0,
+                ProgressValue = sandbox.SubQuestDone,
+                ProgressMaximum = Math.Max(1, sandbox.SubQuestTotal),
+            });
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无生息演算记录" });
+        }
+        return list;
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildTowers(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        foreach (ArknightsTowerRecord tower in record.Towers.OrderByDescending(x => x.Best))
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = tower.Name,
+                Subtitle = tower.SubName,
+                Value = $"最高进度 {tower.Best}",
+            });
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无保全派驻记录" });
+        }
+        return list;
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildCampaigns(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        foreach (ArknightsCampaignRecord campaign in record.Campaigns.OrderByDescending(x => x.MaxKills))
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = campaign.Name,
+                Subtitle = campaign.ZoneName,
+                Value = $"最高剿灭 {campaign.MaxKills}",
+                HasProgress = campaign.MaxKills > 0,
+                ProgressValue = campaign.MaxKills,
+                ProgressMaximum = 400,
+            });
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无剿灭作战记录" });
+        }
+        return list;
+    }
+
+
+    private static List<ArknightsRecordItemView> BuildBossRushes(ArknightsRecord record)
+    {
+        List<ArknightsRecordItemView> list = [];
+        foreach (ArknightsBossRushRecord bossRush in record.BossRushes)
+        {
+            list.Add(new ArknightsRecordItemView
+            {
+                Title = bossRush.Name,
+                Subtitle = bossRush.Played ? $"{bossRush.StageName} · {bossRush.Difficulty}" : "暂无记录",
+                Value = bossRush.Played ? "已挑战" : "未挑战",
+            });
+        }
+        if (list.Count == 0)
+        {
+            list.Add(new ArknightsRecordItemView { Title = "暂无引航者试炼记录" });
+        }
+        return list;
     }
 
 }

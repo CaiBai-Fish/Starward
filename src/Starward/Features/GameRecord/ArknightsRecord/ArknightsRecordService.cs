@@ -28,6 +28,8 @@ public sealed class ArknightsRecord
 
     public int SkinCount { get; set; }
 
+    public string AvatarUrl { get; set; } = "";
+
     public List<ArknightsCampaignRecord> Campaigns { get; } = [];
 
     public List<ArknightsTowerRecord> Towers { get; } = [];
@@ -35,6 +37,10 @@ public sealed class ArknightsRecord
     public List<ArknightsRogueRecord> Rogues { get; } = [];
 
     public List<ArknightsActivityRecord> Activities { get; } = [];
+
+    public List<ArknightsBossRushRecord> BossRushes { get; } = [];
+
+    public List<ArknightsSandboxRecord> Sandboxes { get; } = [];
 
     public ArknightsGarrisonRecord? Garrison { get; set; }
 }
@@ -44,7 +50,13 @@ public sealed class ArknightsCampaignRecord
 {
     public string Id { get; set; } = "";
 
+    public string Name { get; set; } = "";
+
+    public string ZoneName { get; set; } = "";
+
     public int MaxKills { get; set; }
+
+    public string PicUrl { get; set; } = "";
 }
 
 
@@ -52,13 +64,21 @@ public sealed class ArknightsTowerRecord
 {
     public string Id { get; set; } = "";
 
+    public string Name { get; set; } = "";
+
+    public string SubName { get; set; } = "";
+
     public int Best { get; set; }
+
+    public string PicUrl { get; set; } = "";
 }
 
 
 public sealed class ArknightsRogueRecord
 {
     public string Id { get; set; } = "";
+
+    public string Name { get; set; } = "";
 
     public int ClearTime { get; set; }
 
@@ -67,6 +87,8 @@ public sealed class ArknightsRogueRecord
     public int MedalCurrent { get; set; }
 
     public int MedalTotal { get; set; }
+
+    public string PicUrl { get; set; } = "";
 }
 
 
@@ -74,9 +96,49 @@ public sealed class ArknightsActivityRecord
 {
     public string ActId { get; set; } = "";
 
+    public string Name { get; set; } = "";
+
     public int ClearedStages { get; set; }
 
     public int TotalStages { get; set; }
+
+    public DateTimeOffset StartTime { get; set; }
+
+    public DateTimeOffset EndTime { get; set; }
+
+    public string PicUrl { get; set; } = "";
+}
+
+
+public sealed class ArknightsBossRushRecord
+{
+    public string Id { get; set; } = "";
+
+    public string Name { get; set; } = "";
+
+    public string StageName { get; set; } = "";
+
+    public string Difficulty { get; set; } = "";
+
+    public bool Played { get; set; }
+
+    public string PicUrl { get; set; } = "";
+}
+
+
+public sealed class ArknightsSandboxRecord
+{
+    public string Name { get; set; } = "";
+
+    public int MaxDay { get; set; }
+
+    public int BaseLv { get; set; }
+
+    public int EnemyKill { get; set; }
+
+    public int SubQuestDone { get; set; }
+
+    public int SubQuestTotal { get; set; }
 }
 
 
@@ -235,47 +297,74 @@ public sealed class ArknightsRecordService
         {
             throw new InvalidOperationException("森空岛未返回玩家数据。");
         }
-        JsonElement status = data.TryGetProperty("status", out JsonElement statusElement) ? statusElement : default;
+        JsonElement status = GetObject(data, "status");
         record.RoleName = GetString(status, "name", record.RoleName);
         record.Uid = GetString(status, "uid", record.Uid);
         record.Level = GetInt32(status, "level");
         record.MainStage = GetString(status, "mainStageProgress");
         record.CharCount = GetInt32(status, "charCnt");
         record.SkinCount = GetInt32(status, "skinCnt");
-        if (data.TryGetProperty("campaign", out JsonElement campaign) && campaign.TryGetProperty("records", out JsonElement campaignRecords))
+        record.AvatarUrl = GetString(GetObject(status, "avatar"), "url");
+
+        JsonElement activityInfoMap = GetObject(data, "activityInfoMap");
+        JsonElement stageInfoMap = GetObject(data, "stageInfoMap");
+        JsonElement campaignInfoMap = GetObject(data, "campaignInfoMap");
+        JsonElement campaignZoneInfoMap = GetObject(data, "campaignZoneInfoMap");
+        JsonElement towerInfoMap = GetObject(data, "towerInfoMap");
+        JsonElement rogueInfoMap = GetObject(data, "rogueInfoMap");
+
+        JsonElement campaign = GetObject(data, "campaign");
+        if (campaign.ValueKind is JsonValueKind.Object && campaign.TryGetProperty("records", out JsonElement campaignRecords))
         {
             foreach (JsonElement item in campaignRecords.EnumerateArray())
             {
+                string id = GetString(item, "campaignId");
+                JsonElement info = GetObject(campaignInfoMap, id);
+                string zoneId = GetString(info, "campaignZoneId");
                 record.Campaigns.Add(new ArknightsCampaignRecord
                 {
-                    Id = GetString(item, "campaignId"),
+                    Id = id,
+                    Name = GetString(info, "name", id),
+                    ZoneName = GetString(GetObject(campaignZoneInfoMap, zoneId), "name"),
                     MaxKills = GetInt32(item, "maxKills"),
+                    PicUrl = GetString(info, "picUrl"),
                 });
             }
         }
-        if (data.TryGetProperty("tower", out JsonElement tower) && tower.TryGetProperty("records", out JsonElement towerRecords))
+        JsonElement tower = GetObject(data, "tower");
+        if (tower.ValueKind is JsonValueKind.Object && tower.TryGetProperty("records", out JsonElement towerRecords))
         {
             foreach (JsonElement item in towerRecords.EnumerateArray())
             {
+                string id = GetString(item, "towerId");
+                JsonElement info = GetObject(towerInfoMap, id);
                 record.Towers.Add(new ArknightsTowerRecord
                 {
-                    Id = GetString(item, "towerId"),
+                    Id = id,
+                    Name = GetString(info, "name", id),
+                    SubName = GetString(info, "subName"),
                     Best = GetInt32(item, "best"),
+                    PicUrl = GetString(info, "picUrl"),
                 });
             }
         }
-        if (data.TryGetProperty("rogue", out JsonElement rogue) && rogue.TryGetProperty("records", out JsonElement rogueRecords))
+        JsonElement rogue = GetObject(data, "rogue");
+        if (rogue.ValueKind is JsonValueKind.Object && rogue.TryGetProperty("records", out JsonElement rogueRecords))
         {
             foreach (JsonElement item in rogueRecords.EnumerateArray())
             {
-                JsonElement medal = item.TryGetProperty("medal", out JsonElement medalElement) ? medalElement : default;
+                string id = GetString(item, "rogueId");
+                JsonElement info = GetObject(rogueInfoMap, id);
+                JsonElement medal = GetObject(item, "medal");
                 record.Rogues.Add(new ArknightsRogueRecord
                 {
-                    Id = GetString(item, "rogueId"),
+                    Id = id,
+                    Name = GetString(info, "name", id),
                     ClearTime = GetInt32(item, "clearTime"),
                     BpLevel = GetInt32(item, "bpLevel"),
                     MedalCurrent = GetInt32(medal, "current"),
                     MedalTotal = GetInt32(medal, "total"),
+                    PicUrl = GetString(info, "picUrl"),
                 });
             }
         }
@@ -283,6 +372,8 @@ public sealed class ArknightsRecordService
         {
             foreach (JsonElement item in activities.EnumerateArray())
             {
+                string actId = GetString(item, "actId");
+                JsonElement info = GetObject(activityInfoMap, actId);
                 int cleared = 0;
                 int total = 0;
                 if (item.TryGetProperty("zones", out JsonElement zones) && zones.ValueKind is JsonValueKind.Array)
@@ -295,12 +386,87 @@ public sealed class ArknightsRecordService
                 }
                 record.Activities.Add(new ArknightsActivityRecord
                 {
-                    ActId = GetString(item, "actId"),
+                    ActId = actId,
+                    Name = GetString(info, "name", actId),
                     ClearedStages = cleared,
                     TotalStages = total,
+                    StartTime = ParseUnixTime(GetString(info, "startTime")),
+                    EndTime = ParseUnixTime(GetString(info, "endTime")),
+                    PicUrl = GetString(info, "picUrl"),
                 });
             }
         }
+        if (data.TryGetProperty("bossRush", out JsonElement bossRush) && bossRush.ValueKind is JsonValueKind.Array)
+        {
+            foreach (JsonElement item in bossRush.EnumerateArray())
+            {
+                string id = GetString(item, "id");
+                JsonElement recordInfo = GetObject(item, "record");
+                string stageId = GetString(recordInfo, "stageId");
+                JsonElement stageInfo = GetObject(stageInfoMap, stageId);
+                string stageName = GetString(stageInfo, "name", stageId);
+                string code = GetString(stageInfo, "code");
+                if (!string.IsNullOrWhiteSpace(code))
+                {
+                    stageName = $"{code} {stageName}";
+                }
+                bool played = recordInfo.ValueKind is JsonValueKind.Object
+                              && recordInfo.TryGetProperty("played", out JsonElement playedElement)
+                              && playedElement.ValueKind is JsonValueKind.True;
+                record.BossRushes.Add(new ArknightsBossRushRecord
+                {
+                    Id = id,
+                    Name = FormatBossRushName(id),
+                    StageName = played ? stageName : "",
+                    Difficulty = played ? GetString(recordInfo, "difficulty") : "",
+                    Played = played,
+                    PicUrl = GetString(item, "picUrl"),
+                });
+            }
+        }
+        if (data.TryGetProperty("sandbox", out JsonElement sandbox) && sandbox.ValueKind is JsonValueKind.Array)
+        {
+            foreach (JsonElement item in sandbox.EnumerateArray())
+            {
+                int done = 0;
+                int total = 0;
+                if (item.TryGetProperty("subQuest", out JsonElement subQuests) && subQuests.ValueKind is JsonValueKind.Array)
+                {
+                    foreach (JsonElement quest in subQuests.EnumerateArray())
+                    {
+                        total++;
+                        if (quest.TryGetProperty("done", out JsonElement doneElement) && doneElement.ValueKind is JsonValueKind.True)
+                        {
+                            done++;
+                        }
+                    }
+                }
+                record.Sandboxes.Add(new ArknightsSandboxRecord
+                {
+                    Name = GetString(item, "name", "生息演算"),
+                    MaxDay = GetInt32(item, "maxDay"),
+                    BaseLv = GetInt32(item, "baseLv"),
+                    EnemyKill = GetInt32(item, "enemyKill"),
+                    SubQuestDone = done,
+                    SubQuestTotal = total,
+                });
+            }
+        }
+    }
+
+
+    private static string FormatBossRushName(string id)
+    {
+        string digits = new(id.Where(char.IsDigit).ToArray());
+        return string.IsNullOrWhiteSpace(digits) ? id : $"引航者试炼 #{digits.PadLeft(2, '0')}";
+    }
+
+
+    private static JsonElement GetObject(JsonElement element, string name)
+    {
+        return element.ValueKind is JsonValueKind.Object && element.TryGetProperty(name, out JsonElement value) && value.ValueKind is JsonValueKind.Object
+            ? value
+            : default;
     }
 
 
