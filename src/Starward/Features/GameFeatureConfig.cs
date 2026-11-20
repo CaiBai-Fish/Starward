@@ -110,7 +110,7 @@ internal partial class GameFeatureConfig
 
     private static readonly GameFeatureConfig arknights_global = new()
     {
-        SupportedPages = [nameof(GameLauncherPage), nameof(ScreenshotPage)],
+        SupportedPages = [nameof(GameLauncherPage), nameof(ScreenshotPage), nameof(ArknightsRecordPage)],
     };
 
 
@@ -123,6 +123,7 @@ internal partial class GameFeatureConfig
             nameof(ScreenshotPage),
             nameof(EndfieldGachaPage),
             nameof(EndfieldAccountRecordPage),
+            nameof(ArknightsRecordPage),
         ],
         SupportHardLink = true,
         SupportDailyNote = true,
@@ -138,6 +139,7 @@ internal partial class GameFeatureConfig
             nameof(GameLauncherPage),
             nameof(GameSettingPage),
             nameof(ScreenshotPage),
+            nameof(ArknightsRecordPage),
         ],
         SupportHardLink = true,
     };

@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Features.Gacha.Endfield;
 using Starward.Features.GameRecord.DailyNote;
@@ -57,6 +58,25 @@ public sealed partial class ArknightsRecordPage : Page
         {
             ProgressRing_Loading.IsActive = true;
             TextBlock_Error.Text = "";
+            if (CurrentGameId?.GameBiz.Game is GameBiz.endfield)
+            {
+                foreach (NavigationViewItem item in NavigationView_Records.MenuItems.OfType<NavigationViewItem>())
+                {
+                    if (item.Tag is string tag && tag is "garrison" or "rogue" or "activity")
+                    {
+                        item.Visibility = Visibility.Collapsed;
+                    }
+                }
+                NavigationView_Records.SelectedItem = NavigationView_Records.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => (x.Tag as string) == "h5");
+                Items_Records.ItemsSource = new List<ArknightsRecordItemView>
+                {
+                    new() { Title = "终末地游戏数据", Subtitle = "点击左侧「战绩」打开森空岛 H5" },
+                };
+                TextBlock_RoleName.Text = "森空岛工具箱";
+                TextBlock_RoleInfo.Text = "终末地";
+                ProgressRing_Loading.IsActive = false;
+                return;
+            }
             ArknightsRecord record = await _service.GetRecordAsync();
             TextBlock_RoleName.Text = record.RoleName;
             TextBlock_RoleInfo.Text = $"UID {record.Uid} · Lv.{record.Level}";
@@ -108,7 +128,7 @@ public sealed partial class ArknightsRecordPage : Page
         }
         if (key == "h5")
         {
-            ArknightsGameDataWindow.ShowWindow();
+            ArknightsGameDataWindow.ShowWindow(CurrentGameId?.GameBiz.Game is GameBiz.endfield ? "endfield" : "arknights");
             return;
         }
         ShowSection(key);

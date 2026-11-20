@@ -126,13 +126,13 @@
                 <!--  战绩  -->
                 <NavigationViewItem Name="NavigationViewItem_ArknightsRecord"
                                     Tag="ArknightsRecordPage"
-                                    ToolTipService.ToolTip="米游社工具箱">
+                                    ToolTipService.ToolTip="森空岛工具箱">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xF133;" />
+                        <ImageIcon Source="ms-appx:///Assets/Image/icon_skland_toolbox_white.png" />
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.Content>
                         <Border Height="40">
-                            <TextBlock VerticalAlignment="Center" Text="米游社工具箱" />
+                            <TextBlock VerticalAlignment="Center" Text="森空岛工具箱" />
                         </Border>
                     </NavigationViewItem.Content>
                 </NavigationViewItem>

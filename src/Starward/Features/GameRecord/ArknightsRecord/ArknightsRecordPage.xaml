@@ -148,6 +148,11 @@
 
             <NavigationView.MenuItems>
                 <NavigationViewItemSeparator />
+                <NavigationViewItem Tag="h5" Content="战绩">
+                    <NavigationViewItem.Icon>
+                        <ImageIcon Source="ms-appx:///Assets/Image/icon_skland_record.png" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem x:Name="NavigationViewItem_Garrison" Tag="garrison" Content="卫戍协议">
                     <NavigationViewItem.Icon>
                         <ImageIcon Source="ms-appx:///Assets/Image/icon_arknights_garrison.png" />
@@ -163,12 +168,7 @@
                         <ImageIcon Source="ms-appx:///Assets/Image/icon_arknights_activity.png" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItemSeparator />
-                <NavigationViewItem Tag="h5" Content="战绩">
-                    <NavigationViewItem.Icon>
-                        <ImageIcon Source="ms-appx:///Assets/Image/ced4deac2162690105bbc8baad2b51a3_4109616186965788891.png" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
+
 
             </NavigationView.MenuItems>
 

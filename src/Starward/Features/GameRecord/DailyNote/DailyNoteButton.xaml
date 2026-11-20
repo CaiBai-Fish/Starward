@@ -41,6 +41,10 @@
                    Margin="5"
                    x:Load="{x:Bind IsEndfieldEnabled}"
                    Source="ms-appx:///Assets/Image/Endfield/icon_realtime.png" />
+            <Image x:Name="Image_Arknights"
+                   Margin="5"
+                   x:Load="{x:Bind IsArknightsEnabled}"
+                   Source="ms-appx:///Assets/Image/icon_sanity_white.png" />
         </Grid>
 
 
@@ -863,7 +867,7 @@
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Width="20"
                                        Height="20"
-                                       Source="ms-appx:///Assets/Image/icon_sanity_white.svg" />
+                                       Source="ms-appx:///Assets/Image/icon_sanity_white.png" />
                                 <TextBlock VerticalAlignment="Center" FontSize="15">
                                     <Run Text="{x:Bind ArknightsDailyNote.CurrentAp}" /><Run Text=" / " /><Run Text="{x:Bind ArknightsDailyNote.MaxAp}" />
                                 </TextBlock>

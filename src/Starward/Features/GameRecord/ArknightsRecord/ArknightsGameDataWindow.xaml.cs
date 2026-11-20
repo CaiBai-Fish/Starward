@@ -23,6 +23,9 @@ public sealed partial class ArknightsGameDataWindow : WindowEx
     private bool _pendingUpdateFingerprint;
 
 
+    public string GameKey { get; set; } = "arknights";
+
+
     public ArknightsGameDataWindow()
     {
         InitializeComponent();
@@ -39,13 +42,26 @@ public sealed partial class ArknightsGameDataWindow : WindowEx
     }
 
 
-    public static void ShowWindow()
+    public static void ShowWindow(string game = "arknights")
     {
         if (_instance?.AppWindow is null)
         {
             _instance = new ArknightsGameDataWindow();
         }
+        if (_instance.GameKey != game)
+        {
+            _instance.GameKey = game;
+            _instance._core?.Navigate(BuildGameDataUrl(game));
+        }
         _instance.Activate();
+    }
+
+
+    private static string BuildGameDataUrl(string game)
+    {
+        return game == "endfield"
+            ? "https://game.skland.com/endfield/game-data?header=0&hg_media=skland"
+            : "https://game.skland.com/arknights/game-data?header=0&hg_media=skland";
     }
 
 
@@ -89,16 +105,19 @@ public sealed partial class ArknightsGameDataWindow : WindowEx
             _core = core;
             core.Settings.UserAgent = "Mozilla/5.0 (Linux; Android 14; Redmi 7 Build/AP2A.240905.003; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.7204.63 Mobile Safari/537.36; SKLand/2.3.0";
             string folder = AppConfig.UserDataFolder ?? AppContext.BaseDirectory;
-            string snapshot = Path.Combine(folder, "ArknightsGameData.html");
-            if (File.Exists(snapshot))
+            if (GameKey == "arknights")
             {
-                WebView_GameData.Visibility = Visibility.Visible;
-                core.Navigate(new Uri(snapshot).AbsoluteUri);
-                if (_pendingUpdateFingerprint)
+                string snapshot = Path.Combine(folder, "ArknightsGameData.html");
+                if (File.Exists(snapshot))
                 {
-                    await ApplyDeviceFingerprintAsync();
+                    WebView_GameData.Visibility = Visibility.Visible;
+                    core.Navigate(new Uri(snapshot).AbsoluteUri);
+                    if (_pendingUpdateFingerprint)
+                    {
+                        await ApplyDeviceFingerprintAsync();
+                    }
+                    return;
                 }
-                return;
             }
             string? cacheScript = BuildCacheScript();
             if (cacheScript is not null)
@@ -106,7 +125,7 @@ public sealed partial class ArknightsGameDataWindow : WindowEx
                 await core.AddScriptToExecuteOnDocumentCreatedAsync(cacheScript);
             }
             WebView_GameData.Visibility = Visibility.Visible;
-            core.Navigate(GameDataUrl);
+            core.Navigate(BuildGameDataUrl(GameKey));
         }
         catch
         {
