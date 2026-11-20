@@ -167,6 +167,16 @@ public sealed class YostarGameClient
 
     public static string BuildFileUrl(string cdn, string source, string path)
     {
-        return $"{cdn.TrimEnd('/')}/{source.Trim('/')}/{path.TrimStart('/')}";
+        // manifest 中存在包含 '#' 等字符的资源文件名，必须编码最后一段，否则会被当作 fragment。
+        // 目录部分保持原样，与官方启动器一致（例如 [[en]] 目录）。
+        string relative = $"{source.Trim('/')}/{path.TrimStart('/')}";
+        int index = relative.LastIndexOf('/');
+        if (index < 0)
+        {
+            return $"{cdn.TrimEnd('/')}/{Uri.EscapeDataString(relative)}";
+        }
+        string directory = relative[..index];
+        string fileName = relative[(index + 1)..];
+        return $"{cdn.TrimEnd('/')}/{directory}/{Uri.EscapeDataString(fileName)}";
     }
 }

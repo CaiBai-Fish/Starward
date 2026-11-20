@@ -53,21 +53,36 @@ internal sealed class YostarArknightsGameInstallService
             File.SetAttributes(file, FileAttributes.Normal);
         }
 
-        YostarGameConfig config = await _client.GetGameConfigAsync(cancellationToken);
-        if (config.IsEmpty)
+        YostarGameConfig config;
+        YostarCdnInfo cdn;
+        YostarManifest manifest;
+        try
         {
-            throw new InvalidDataException("The Yostar launcher returned an empty game config.");
+            config = await _client.GetGameConfigAsync(cancellationToken);
+            if (config.IsEmpty)
+            {
+                throw new InvalidDataException("The Yostar launcher returned an empty game config.");
+            }
+            cdn = await _client.GetCdnAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(cdn.PrimaryCdn) && string.IsNullOrWhiteSpace(cdn.BackupCdn))
+            {
+                throw new InvalidDataException("The Yostar launcher returned no CDN.");
+            }
+            string manifestUrl = await _client.GetManifestUrlAsync(config.LatestVersion, config.LatestFilePath, cancellationToken);
+            manifest = await _client.GetManifestAsync(manifestUrl, cancellationToken);
+            if (manifest.Files.Count == 0)
+            {
+                throw new InvalidDataException("The Yostar launcher returned an empty manifest.");
+            }
+            TrySaveCache(config, cdn, manifest);
         }
-        YostarCdnInfo cdn = await _client.GetCdnAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(cdn.PrimaryCdn) && string.IsNullOrWhiteSpace(cdn.BackupCdn))
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            throw new InvalidDataException("The Yostar launcher returned no CDN.");
-        }
-        string manifestUrl = await _client.GetManifestUrlAsync(config.LatestVersion, config.LatestFilePath, cancellationToken);
-        YostarManifest manifest = await _client.GetManifestAsync(manifestUrl, cancellationToken);
-        if (manifest.Files.Count == 0)
-        {
-            throw new InvalidDataException("The Yostar launcher returned an empty manifest.");
+            if (!TryLoadCache(out config, out cdn, out manifest))
+            {
+                throw;
+            }
+            _logger.LogWarning(ex, "Yostar launcher API is unavailable, using cached config and manifest (version {version}).", config.LatestVersion);
         }
 
         LocalManifest local = ReadLocalManifest(installPath);
@@ -150,6 +165,92 @@ internal sealed class YostarArknightsGameInstallService
         context.Progress_DownloadFinishBytes = context.Progress_DownloadTotalBytes;
         context.Progress_Percent = 1;
         context.State = GameInstallState.Finish;
+    }
+
+
+    private static string CacheFilePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Starward", "Yostar", YostarGameConstants.GameDirectoryName, "latest-cache.json");
+
+
+    private static void TrySaveCache(YostarGameConfig config, YostarCdnInfo cdn, YostarManifest manifest)
+    {
+        try
+        {
+            string path = CacheFilePath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var files = manifest.Files.Select(x => new { path = x.Path, hash = x.Hash, size = x.Size.ToString() }).ToArray();
+            var data = new
+            {
+                config = new
+                {
+                    lowest_version = config.LowestVersion,
+                    latest_version = config.LatestVersion,
+                    latest_file_path = config.LatestFilePath,
+                    start_exe_name = config.StartExeName,
+                    start_params = config.StartParams,
+                    decompression_size = config.DecompressionSize,
+                    uninstall_script = config.UninstallScript,
+                },
+                cdn = new { primary = cdn.PrimaryCdn, backup = cdn.BackupCdn },
+                manifest = new { source = manifest.Source, file = files },
+                cached_at = DateTimeOffset.UtcNow,
+            };
+            string temp = path + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(data, JsonOptions), new UTF8Encoding(false));
+            File.Move(temp, path, overwrite: true);
+        }
+        catch { }
+    }
+
+
+    private static bool TryLoadCache(out YostarGameConfig config, out YostarCdnInfo cdn, out YostarManifest manifest)
+    {
+        config = new YostarGameConfig();
+        cdn = new YostarCdnInfo();
+        manifest = new YostarManifest();
+        try
+        {
+            string path = CacheFilePath;
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+            JsonElement root = document.RootElement;
+            JsonElement configElement = root.GetProperty("config");
+            config.LowestVersion = configElement.TryGetProperty("lowest_version", out JsonElement lowest) ? lowest.GetString() ?? "" : "";
+            config.LatestVersion = configElement.TryGetProperty("latest_version", out JsonElement latest) ? latest.GetString() ?? "" : "";
+            config.LatestFilePath = configElement.TryGetProperty("latest_file_path", out JsonElement latestPath) ? latestPath.GetString() ?? "" : "";
+            config.StartExeName = configElement.TryGetProperty("start_exe_name", out JsonElement exeName) ? exeName.GetString() ?? "" : "";
+            config.DecompressionSize = configElement.TryGetProperty("decompression_size", out JsonElement decompression) ? decompression.GetString() ?? "" : "";
+            config.UninstallScript = configElement.TryGetProperty("uninstall_script", out JsonElement uninstall) ? uninstall.GetString() ?? "" : "";
+            if (configElement.TryGetProperty("start_params", out JsonElement parameters) && parameters.ValueKind is JsonValueKind.Array)
+            {
+                config.StartParams.AddRange(parameters.EnumerateArray().Select(x => x.GetString() ?? "").Where(x => x.Length > 0));
+            }
+            JsonElement cdnElement = root.GetProperty("cdn");
+            cdn.PrimaryCdn = cdnElement.TryGetProperty("primary", out JsonElement primary) ? primary.GetString() ?? "" : "";
+            cdn.BackupCdn = cdnElement.TryGetProperty("backup", out JsonElement backup) ? backup.GetString() ?? "" : "";
+            JsonElement manifestElement = root.GetProperty("manifest");
+            manifest.Source = manifestElement.TryGetProperty("source", out JsonElement source) ? source.GetString() ?? "" : "";
+            if (manifestElement.TryGetProperty("file", out JsonElement files) && files.ValueKind is JsonValueKind.Array)
+            {
+                foreach (JsonElement item in files.EnumerateArray())
+                {
+                    string sizeText = item.TryGetProperty("size", out JsonElement size) ? (size.ValueKind is JsonValueKind.String ? size.GetString() ?? "0" : size.GetRawText()) : "0";
+                    manifest.Files.Add(new YostarManifestFile
+                    {
+                        Path = item.TryGetProperty("path", out JsonElement filePath) ? filePath.GetString() ?? "" : "",
+                        Hash = item.TryGetProperty("hash", out JsonElement hash) ? hash.GetString() ?? "" : "",
+                        Size = long.TryParse(sizeText, out long parsed) ? parsed : 0,
+                    });
+                }
+            }
+            return !config.IsEmpty && manifest.Files.Count > 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
 

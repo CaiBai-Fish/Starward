@@ -108,8 +108,8 @@ public static class RpcRunner
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
                 AutomaticDecompression = DecompressionMethods.All,
-                // Yostar 的国际线路经过系统代理时 TLS 连接不稳定，改为直连。
-                UseProxy = false,
+                // 使用系统代理（Clash 等）访问 Yostar 国际线路。
+                UseProxy = true,
                 ConnectTimeout = TimeSpan.FromSeconds(20),
                 PooledConnectionLifetime = TimeSpan.FromMinutes(5),
             })
