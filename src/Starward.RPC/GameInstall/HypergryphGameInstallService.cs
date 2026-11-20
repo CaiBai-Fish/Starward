@@ -59,9 +59,11 @@ internal sealed class HypergryphGameInstallService
             metadata = null;
         }
         string localVersion = metadata?.Version ?? "";
+        // 修复需要完整包，而官方接口在本地版本已是最新时会返回空的 pkg，因此修复时用空版本请求
+        string requestVersion = context.Operation is GameInstallOperation.Repair ? "" : localVersion;
         HypergryphLatestGame latest = await _launcherClient.GetLatestGameAsync(
             context.GameId.GameBiz,
-            localVersion,
+            requestVersion,
             cancellationToken);
 
         if (string.IsNullOrWhiteSpace(localVersion) && File.Exists(Path.Combine(context.InstallPath, profile.ExeName)))
@@ -91,9 +93,11 @@ internal sealed class HypergryphGameInstallService
             case GameInstallOperation.Update when latest.Patch is not null && latest.Patch.DownloadParts.Count > 0:
                 await ExecuteUpdateWithFallbackAsync(context, latest, cancellationToken);
                 break;
+            case GameInstallOperation.Repair:
+                await ExecuteRepairAsync(context, latest, cancellationToken);
+                break;
             case GameInstallOperation.Install:
             case GameInstallOperation.Update:
-            case GameInstallOperation.Repair:
                 await ExecuteFullPackageAsync(context, latest, cancellationToken);
                 break;
             default:
@@ -169,9 +173,43 @@ internal sealed class HypergryphGameInstallService
         await metadata.WriteAsync(context.InstallPath, cancellationToken);
     }
 
+    /// <summary>
+    /// 修复模式：先校验已安装文件清单，与最新版本一致时跳过下载，否则重新下载完整包。
+    /// </summary>
+    private async Task ExecuteRepairAsync(GameInstallContext context, HypergryphLatestGame latest, CancellationToken cancellationToken)
+    {
+        context.State = GameInstallState.Verifying;
+        HypergryphGameProfile profile = HypergryphGameConstants.GetGameProfile(context.GameId.GameBiz);
+        string exe = Path.Combine(context.InstallPath, profile.ExeName);
+        if (File.Exists(exe) && await IsLatestOfficialInstallAsync(context, latest, cancellationToken))
+        {
+            _logger.LogInformation("Hypergryph game files are intact, skipping repair download.");
+            context.Progress_Percent = 100;
+            await WriteInstalledMetadataAsync(context, latest, cancellationToken);
+            return;
+        }
+        _logger.LogInformation("Hypergryph game files are damaged or outdated, repairing with the full package.");
+        await ExecuteFullPackageAsync(context, latest, cancellationToken);
+    }
+
     private async Task ExecuteFullPackageAsync(GameInstallContext context, HypergryphLatestGame latest, CancellationToken cancellationToken)
     {
         IReadOnlyList<HypergryphPackagePart> parts = latest.Package.Packs;
+        if (parts.Count == 0)
+        {
+            // 本地版本已是最新时官方接口不返回完整包，改用空版本重新请求
+            _logger.LogInformation("The Hypergryph package is empty for the current version, requesting the full package again.");
+            HypergryphLatestGame fullPackage = await _launcherClient.GetLatestGameAsync(
+                context.GameId.GameBiz,
+                "",
+                cancellationToken);
+            if (fullPackage.Package.Packs.Count > 0)
+            {
+                latest = fullPackage;
+                parts = fullPackage.Package.Packs;
+                context.LatestGameVersion = latest.Version;
+            }
+        }
         if (parts.Count == 0)
         {
             throw new InvalidDataException("The Hypergryph full package is empty.");

@@ -167,9 +167,10 @@
                                   CornerRadius="8">
                                 <sc:CachedImage Width="40"
                                                 Height="40"
+                                                CornerRadius="12"
                                                 Source="{x:Bind CurrentGameBizIcon.GameIcon, FallbackValue={x:Null}}" />
-                                <sc:CachedImage Width="20"
-                                                Height="20"
+                                <sc:CachedImage Width="12"
+                                                Height="12"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Bottom"
                                                 Source="{x:Bind CurrentGameBizIcon.ServerIcon, FallbackValue={x:Null}}" />

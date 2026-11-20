@@ -143,11 +143,56 @@ internal static class HypergryphGameMetadata
     {
         HypergryphGamePackage package = latest.Package ?? new();
         List<HypergryphPackagePart> packs = package.Packs ?? [];
-        HypergryphPackagePart? firstPart = packs.FirstOrDefault();
-        string url = !string.IsNullOrWhiteSpace(firstPart?.Url) ? firstPart.Url : package.Url;
-        string md5 = !string.IsNullOrWhiteSpace(firstPart?.MD5) ? firstPart.MD5 : package.MD5;
-        long packedSize = packs.Count > 0 ? packs.Sum(x => x.PackageSize) : package.PackageSize;
-        long decompressedSize = package.TotalSize + (packs.Count > 0 ? packs.Sum(x => x.PackageSize) : 0);
+
+        // 完整包：每个分片单独列出，便于查看大小和复制链接
+        var fullPackages = packs
+            .Where(x => !string.IsNullOrWhiteSpace(x.Url))
+            .Select(x => new GamePackageFile
+            {
+                Url = x.Url,
+                MD5 = x.MD5,
+                Size = x.PackageSize,
+                DecompressedSize = 0,
+            })
+            .ToList();
+        if (fullPackages.Count == 0 && !string.IsNullOrWhiteSpace(package.Url))
+        {
+            fullPackages.Add(new GamePackageFile
+            {
+                Url = package.Url,
+                MD5 = package.MD5,
+                Size = package.PackageSize,
+                DecompressedSize = package.TotalSize + package.PackageSize,
+            });
+        }
+
+        // 增量包：请求时带上本地版本，官方才会返回补丁包
+        var patches = new List<GamePackageResource>();
+        if (latest.Patch is HypergryphGamePatch patch)
+        {
+            IReadOnlyList<HypergryphPackagePart> patchParts = patch.DownloadParts;
+            if (patchParts.Count > 0)
+            {
+                patches.Add(new GamePackageResource
+                {
+                    // 官方增量包响应不带版本号，使用本次请求解析出的最新版本
+                    Version = string.IsNullOrWhiteSpace(patch.TargetVersion) ? latest.Version : patch.TargetVersion,
+                    GamePackages = patchParts
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Url))
+                        .Select(x => new GamePackageFile
+                        {
+                            Url = x.Url,
+                            MD5 = x.MD5,
+                            Size = x.PackageSize,
+                            DecompressedSize = 0,
+                        })
+                        .ToList(),
+                    AudioPackages = [],
+                    ResListUrl = "",
+                });
+            }
+        }
+
         return new GamePackage
         {
             GameId = GameId.FromGameBiz(gameBiz)!,
@@ -156,20 +201,11 @@ internal static class HypergryphGameMetadata
                 Major = new GamePackageResource
                 {
                     Version = latest.Version,
-                    GamePackages =
-                    [
-                        new GamePackageFile
-                        {
-                            Url = url,
-                            MD5 = md5,
-                            Size = packedSize,
-                            DecompressedSize = decompressedSize,
-                        },
-                    ],
+                    GamePackages = fullPackages,
                     AudioPackages = [],
                     ResListUrl = "",
                 },
-                Patches = [],
+                Patches = patches,
             },
             PreDownload = new GamePackageVersion { Patches = [] },
         };

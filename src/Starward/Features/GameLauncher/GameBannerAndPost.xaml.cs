@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Starward.Core.HoYoPlay;
+using Starward.Core.Hypergryph;
 using Starward.Features.HoYoPlay;
 using Starward.Features.ViewHost;
 using Starward.Helpers;
@@ -203,7 +204,7 @@ public sealed partial class GameBannerAndPost : UserControl
                 Button_InGameNotices.Visibility = Visibility.Collapsed;
                 return;
             }
-            if (AppConfig.DisableGameNoticeRedHot)
+            if (AppConfig.DisableGameNoticeRedHot || HypergryphGameConstants.IsHypergryphGame(CurrentGameId.GameBiz))
             {
                 IsGameNoticesAlert = false;
             }
@@ -307,11 +308,23 @@ public sealed partial class GameBannerAndPost : UserControl
     {
         try
         {
-            new GameNoticeWindow
+            nint parentWindowHandle = (nint)this.XamlRoot.ContentIslandEnvironment.AppWindowId.Value;
+            if (HypergryphGameConstants.IsHypergryphGame(CurrentGameId.GameBiz))
             {
-                CurrentGameBiz = CurrentGameId.GameBiz,
-                ParentWindowHandle = (nint)this.XamlRoot.ContentIslandEnvironment.AppWindowId.Value
-            }.Activate();
+                new HypergryphGameNoticeWindow
+                {
+                    CurrentGameId = CurrentGameId,
+                    ParentWindowHandle = parentWindowHandle,
+                }.Activate();
+            }
+            else
+            {
+                new GameNoticeWindow
+                {
+                    CurrentGameBiz = CurrentGameId.GameBiz,
+                    ParentWindowHandle = parentWindowHandle,
+                }.Activate();
+            }
         }
         catch { }
     }

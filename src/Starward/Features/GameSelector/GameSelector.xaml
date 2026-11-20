@@ -43,7 +43,7 @@
                     sh:PointerCursor.CursorShape="Hand"
                     BorderThickness="0"
                     Command="{x:Bind ShowFullBackgroundCommand}"
-                    CornerRadius="8"
+                    CornerRadius="12"
                     Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
                 <Grid>
                     <FontIcon HorizontalAlignment="Center"
@@ -54,12 +54,13 @@
                     <!--  游戏图标  -->
                     <sc:CachedImage Width="40"
                                     Height="40"
+                                    CornerRadius="12"
                                     Source="{x:Bind CurrentGameBizIcon.GameIcon, FallbackValue={x:Null}}"
                                     Style="{ThemeResource NoAnimationImageExStyle}"
                                     Visibility="{x:Bind IsPinned, Converter={StaticResource BoolToVisibilityReversedConverter}}" />
                     <!--  服务器图标  -->
-                    <sc:CachedImage Width="20"
-                                    Height="20"
+                    <sc:CachedImage Width="12"
+                                    Height="12"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom"
                                     Source="{x:Bind CurrentGameBizIcon.ServerIcon, FallbackValue={x:Null}}"
@@ -221,9 +222,9 @@
                                                                     <ColumnDefinition Width="Auto" />
                                                                 </Grid.ColumnDefinitions>
                                                                 <!--  服务器图标  -->
-                                                                <Border Width="24"
-                                                                        Height="24"
-                                                                        CornerRadius="4">
+                                                                <Border Width="18"
+                                                                        Height="18"
+                                                                        CornerRadius="3">
                                                                     <Image Source="{x:Bind ServerIcon}" />
                                                                 </Border>
                                                                 <!--  服务器名称  -->
@@ -354,18 +355,18 @@
                                             <!--  游戏图标  -->
                                             <sc:CachedImage Width="36"
                                                             Height="36"
-                                                            CornerRadius="8"
+                                                            CornerRadius="11"
                                                             Source="{x:Bind GameIcon, FallbackValue={x:Null}}" />
                                             <!--  游戏名  -->
                                             <TextBlock MinWidth="160"
                                                        VerticalAlignment="Center"
                                                        Text="{x:Bind GameName}" />
                                             <!--  服务器图标  -->
-                                            <sc:CachedImage Width="24"
-                                                            Height="24"
+                                            <sc:CachedImage Width="18"
+                                                            Height="18"
                                                             HorizontalAlignment="Center"
                                                             VerticalAlignment="Center"
-                                                            CornerRadius="4"
+                                                            CornerRadius="3"
                                                             Source="{x:Bind ServerIcon, FallbackValue={x:Null}}" />
                                             <!--  服务器名  -->
                                             <TextBlock MinWidth="100"
@@ -506,15 +507,16 @@
                               Translation="0,0,16">
                             <sc:CachedImage Width="40"
                                             Height="40"
+                                            CornerRadius="12"
                                             Source="{x:Bind GameIcon}" />
-                            <Image Width="20"
-                                   Height="20"
+                            <Image Width="12"
+                                   Height="12"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Bottom">
                                 <Image.Source>
-                                    <BitmapImage DecodePixelHeight="20"
+                                    <BitmapImage DecodePixelHeight="12"
                                                  DecodePixelType="Logical"
-                                                 DecodePixelWidth="20"
+                                                 DecodePixelWidth="12"
                                                  UriSource="{x:Bind ServerIcon}" />
                                 </Image.Source>
                             </Image>

@@ -55,8 +55,8 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
         GameBiz = gameBiz;
         GameId = GameId.FromGameBiz(gameBiz)!;
         GameIcon = GameBizToIcon(gameBiz);
-        ServerIcon = GameBizToServerIcon(gameBiz);
         GameName = gameBiz.ToGameName();
+        ServerIcon = GameBizToServerIcon(gameBiz);
         ServerName = gameBiz.ToGameServerName();
     }
 
@@ -67,28 +67,23 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
         GameId = gameInfo;
         GameBiz = gameInfo.GameBiz;
         GameIcon = gameInfo.Display.Icon.Url;
-        ServerIcon = GameBizToServerIcon(gameInfo.GameBiz);
         GameName = gameInfo.Display.Name;
+        ServerIcon = GameBizToServerIcon(gameInfo.GameBiz);
         ServerName = gameInfo.GameBiz.ToGameServerName();
     }
 
 
 
-    public void UpdateInfo()
+    /// <summary>
+    /// 使用 HoYoPlay 接口返回的图标替换当前图标。
+    /// 只更新图标，游戏名与服务器名沿用本地映射。
+    /// </summary>
+    public void UpdateIcon(GameInfo gameInfo)
     {
-        GameIcon = GameBizToIcon(GameBiz);
-        ServerIcon = GameBizToServerIcon(GameBiz);
-        GameName = GameBiz.ToGameName();
-        ServerName = GameBiz.ToGameServerName();
-    }
-
-
-    public void UpdateInfo(GameInfo gameInfo)
-    {
-        GameIcon = gameInfo.Display.Icon.Url;
-        ServerIcon = GameBizToServerIcon(gameInfo.GameBiz);
-        GameName = gameInfo.Display.Name;
-        ServerName = gameInfo.GameBiz.ToGameServerName();
+        if (!string.IsNullOrWhiteSpace(gameInfo?.Display?.Icon?.Url))
+        {
+            GameIcon = gameInfo.Display.Icon.Url;
+        }
     }
 
 
@@ -110,15 +105,23 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
 
     private static string GameBizToServerIcon(GameBiz gameBiz)
     {
+        // 鹰角游戏图标本身不区分渠道，用社区平台 Logo 作为服务器角标。
+        if (gameBiz.Game is GameBiz.endfield or GameBiz.arknights)
+        {
+            return gameBiz.IsGlobalServer()
+                ? "ms-appx:///Assets/Image/icon_skport.png"
+                : "ms-appx:///Assets/Image/icon_skland.png";
+        }
+        // 库洛等第三方游戏不属于米哈游渠道体系，不显示角标。
         if (ThirdPartyGameService.IsThirdPartyGame(gameBiz))
         {
             return "ms-appx:///Assets/Image/Transparent.png";
         }
         return gameBiz.Server switch
         {
-            "cn" => "ms-appx:///Assets/Image/gameicon_hyperion.png",
-            "global" => "ms-appx:///Assets/Image/gameicon_hoyolab.png",
-            "bilibili" => "ms-appx:///Assets/Image/gameicon_bilibili.png",
+            "cn" => "ms-appx:///Assets/Image/icon_badge_miyoushe.png",
+            "global" => "ms-appx:///Assets/Image/icon_badge_hoyolab.png",
+            "bilibili" => "ms-appx:///Assets/Image/icon_badge_bilibili.png",
             _ => "ms-appx:///Assets/Image/Transparent.png",
         };
     }

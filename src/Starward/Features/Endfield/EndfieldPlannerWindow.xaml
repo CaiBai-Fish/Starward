@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<sf:WindowEx x:Class="Starward.Features.Endfield.EndfieldPlannerWindow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:lang="using:Starward.Language"
+             xmlns:local="using:Starward.Features.Endfield"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sf="using:Starward.Frameworks"
+             Title="Endfield Planner"
+             x:DefaultBindMode="OneWay"
+             mc:Ignorable="d">
+
+    <Grid x:Name="RootGrid" Loaded="RootGrid_Loaded">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <!--  标题栏  -->
+        <StackPanel Margin="20,0,0,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="8">
+            <Image Width="20"
+                   Height="20"
+                   Source="ms-appx:///Assets/Image/Endfield/icon_cep.png" />
+            <TextBlock VerticalAlignment="Center"
+                       FontSize="13"
+                       Text="{x:Bind lang:Lang.EndfieldPlannerWindow_Title}" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <WebView2 x:Name="webview"
+                      DefaultBackgroundColor="Transparent"
+                      Visibility="Collapsed" />
+
+            <!--  加载中  -->
+            <StackPanel x:Name="StackPanel_Loading"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="12">
+                <ProgressRing Width="40"
+                              Height="40"
+                              IsIndeterminate="True" />
+                <TextBlock HorizontalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="{x:Bind lang:Lang.EndfieldPlannerWindow_Loading}" />
+            </StackPanel>
+
+            <!--  加载失败  -->
+            <StackPanel x:Name="StackPanel_Error"
+                        MaxWidth="420"
+                        Margin="40"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="16"
+                        Visibility="Collapsed">
+                <FontIcon FontSize="36"
+                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                          Glyph="&#xE783;" />
+                <TextBlock HorizontalAlignment="Center"
+                           FontSize="16"
+                           Text="{x:Bind lang:Lang.EndfieldPlannerWindow_LoadFailed}"
+                           TextWrapping="Wrap" />
+                <TextBlock x:Name="TextBlock_ErrorMessage"
+                           HorizontalAlignment="Center"
+                           FontSize="12"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap" />
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                    <Button Click="Button_Retry_Click" Content="{x:Bind lang:Lang.EndfieldPlannerWindow_Retry}" />
+                    <Button Click="Button_OpenInBrowser_Click" Content="{x:Bind lang:Lang.EndfieldPlannerWindow_OpenInBrowser}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+    </Grid>
+
+</sf:WindowEx>

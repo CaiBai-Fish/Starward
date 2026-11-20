@@ -192,6 +192,24 @@ public sealed partial class GameSelector : UserControl
 
 
     /// <summary>
+    /// 使用 HoYoPlay 接口返回的图标覆盖游戏图标。
+    /// 按 GameId 精确匹配，避免同一 GameBiz 的国服、国际服、B 服互相串图。
+    /// </summary>
+    private static void ApplyGameIcon(GameBizIcon icon, List<GameInfo> gameInfos)
+    {
+        try
+        {
+            if (gameInfos.FirstOrDefault(x => x.Id == icon.GameId?.Id) is GameInfo info)
+            {
+                icon.UpdateIcon(info);
+            }
+        }
+        catch { }
+    }
+
+
+
+    /// <summary>
     /// 初始化游戏图标区域
     /// </summary>
     private void InitializeGameIconsArea(List<GameInfo> gameInfos)
@@ -208,7 +226,9 @@ public sealed partial class GameSelector : UserControl
                 if (GameBiz.TryParse(str, out GameBiz biz))
                 {
                     // 已知的 GameBiz
-                    GameBizIcons.Add(new GameBizIcon(biz));
+                    GameBizIcon newIcon = new(biz);
+                    ApplyGameIcon(newIcon, gameInfos);
+                    GameBizIcons.Add(newIcon);
                 }
                 else if (gameInfos.FirstOrDefault(x => x.GameBiz == biz) is GameInfo info)
                 {
@@ -228,6 +248,7 @@ public sealed partial class GameSelector : UserControl
             else if (lastSelectedGameBiz.IsKnown())
             {
                 CurrentGameBizIcon = new GameBizIcon(lastSelectedGameBiz);
+                ApplyGameIcon(CurrentGameBizIcon, gameInfos);
                 CurrentGameBizIcon.IsSelected = true;
                 CurrentGameBiz = lastSelectedGameBiz;
             }
@@ -625,6 +646,7 @@ public sealed partial class GameSelector : UserControl
                         {
                             IsPinned = GameBizIcons.Any(x => x.GameBiz == biz),
                         };
+                        ApplyGameIcon(server, gameInfos);
                         item.Servers.Add(server);
                     }
                     else if (gameInfos.FirstOrDefault(x => x.GameBiz == biz) is GameInfo info)
@@ -665,15 +687,11 @@ public sealed partial class GameSelector : UserControl
                 InitializeGameServerArea(gameInfos);
                 foreach (GameBizIcon icon in GameBizIcons)
                 {
-                    if (icon.GameBiz.IsKnown())
-                    {
-                        icon.UpdateInfo();
-                    }
-                    else
-                    {
-                        GameInfo info = await _hoyoplayService.GetGameInfoAsync(icon.GameId);
-                        icon.UpdateInfo(info);
-                    }
+                    ApplyGameIcon(icon, gameInfos);
+                }
+                if (CurrentGameBizIcon is not null)
+                {
+                    ApplyGameIcon(CurrentGameBizIcon, gameInfos);
                 }
                 await InitializeInstalledGamesCommand.ExecuteAsync(null);
                 _logger.LogInformation("Game info list updated: {Count}", gameInfos.Count);

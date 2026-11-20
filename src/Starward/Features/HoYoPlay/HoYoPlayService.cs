@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Features.GameLauncher;
 using Starward.Features.Hypergryph;
 using Starward.Features.ThirdParty;
 using System;
@@ -270,7 +271,19 @@ public class HoYoPlayService
     {
         if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
         {
-            HypergryphLatestGame latest = await _hypergryphLauncherClient.GetLatestGameAsync(gameId.GameBiz, null, cancellationToken);
+            // 请求时带上本地版本号，官方才会返回增量更新包
+            string localVersion = "";
+            if (GameLauncherService.GetGameInstallPath(gameId.GameBiz) is string installPath)
+            {
+                HypergryphInstallMetadata? metadata = await HypergryphInstallMetadata.ReadAsync(installPath, cancellationToken);
+                localVersion = metadata?.Version ?? "";
+            }
+            HypergryphLatestGame latest = await _hypergryphLauncherClient.GetLatestGameAsync(gameId.GameBiz, localVersion, cancellationToken);
+            if (latest.Package.Packs.Count == 0 && (latest.Patch?.DownloadParts.Count ?? 0) == 0)
+            {
+                // 本地版本已是最新时官方不返回完整包，用空版本重新请求以显示完整包
+                latest = await _hypergryphLauncherClient.GetLatestGameAsync(gameId.GameBiz, "", cancellationToken);
+            }
             return HypergryphGameMetadata.CreateGamePackage(gameId.GameBiz, latest);
         }
         if (!_memoryCache.TryGetValue($"{nameof(GamePackage)}_{gameId.Id}", out GamePackage? package))

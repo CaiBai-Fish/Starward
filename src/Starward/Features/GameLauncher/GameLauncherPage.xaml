@@ -10,6 +10,7 @@
              xmlns:sch="using:Starward.Core.HoYoPlay"
              xmlns:sf="using:Starward.Frameworks"
              xmlns:sfc="using:Starward.Features.CloudGame"
+             xmlns:sfe="using:Starward.Features.Endfield"
              xmlns:sfg="using:Starward.Features.GameInstall"
              xmlns:sfga="using:Starward.Features.GameAccount"
              xmlns:sfgd="using:Starward.Features.GameRecord.DailyNote"
@@ -689,6 +690,10 @@
             <sfgd:DailyNoteButton Width="40"
                                   Height="40"
                                   CurrentGameId="{x:Bind CurrentGameId}" />
+            <!--  终末地规划器（CEP）  -->
+            <sfe:EndfieldPlannerButton Width="40"
+                                       Height="40"
+                                       CurrentGameId="{x:Bind CurrentGameId}" />
             <!--  通行证授权登录  -->
             <local:GameAuthLoginButton Width="40"
                                        Height="40"

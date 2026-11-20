@@ -51,6 +51,26 @@ public static class HypergryphGameConstants
 
     public const string GlobalEndfieldInstallationDirectory = "Arknights Endfield";
 
+    // 游戏内公告（bulletin）接口
+    public const string ChinaGameHubUrl = "https://game-hub.hypergryph.com";
+
+    public const string GlobalGameHubUrl = "https://game-hub.gryphline.com";
+
+    public const string EndfieldBulletinCodeCN = "endfield_5SD9TN";
+
+    public const string EndfieldBulletinCodeOS = "endfield_U35PW8";
+
+    public const int EndfieldBulletinChannelCN = 1;
+
+    public const int EndfieldBulletinChannelOS = 6;
+
+    public const int EndfieldBulletinServerOS = 3;
+
+    /// <summary>
+    /// 明日方舟的游戏内公告页面（ak-webview 的 H5，公开可访问）。
+    /// </summary>
+    public const string ArknightsBulletinPageUrl = "https://ak-webview.hypergryph.com/?target=Windows";
+
     public const string EndfieldBackground = "ms-appx:///Assets/Image/background_endfield.jpg";
 
     public const string EndfieldIcon = "ms-appx:///Assets/Image/icon_endfield.png";
@@ -58,6 +78,16 @@ public static class HypergryphGameConstants
     public const string ArknightsBackground = "ms-appx:///Assets/Image/background_arknights.jpg";
 
     public const string ArknightsIcon = "ms-appx:///Assets/Image/icon_arknights.png";
+
+    /// <summary>
+    /// 鹰角国服（森空岛）渠道角标。
+    /// </summary>
+    public const string SklandIcon = "ms-appx:///Assets/Image/icon_skland.png";
+
+    /// <summary>
+    /// 鹰角国际服（SKPORT）渠道角标。
+    /// </summary>
+    public const string SkportIcon = "ms-appx:///Assets/Image/icon_skport.png";
 
     public const string EndfieldListLogo = "ms-appx:///Assets/Image/icon_endfield_logo.png";
 

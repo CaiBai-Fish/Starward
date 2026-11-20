@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl x:Class="Starward.Features.Endfield.EndfieldPlannerButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:lang="using:Starward.Language"
+             xmlns:local="using:Starward.Features.Endfield"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             x:DefaultBindMode="OneWay"
+             mc:Ignorable="d">
+
+    <Button x:Name="Button_EndfieldPlanner"
+            Padding="0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderThickness="0"
+            Click="Button_EndfieldPlanner_Click"
+            CornerRadius="8"
+            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
+            ToolTipService.Placement="Left"
+            ToolTipService.ToolTip="{x:Bind lang:Lang.EndfieldPlannerButton_ToolTip}">
+        <Image Width="24"
+               Height="24"
+               Source="ms-appx:///Assets/Image/Endfield/icon_cep.png" />
+    </Button>
+
+</UserControl>

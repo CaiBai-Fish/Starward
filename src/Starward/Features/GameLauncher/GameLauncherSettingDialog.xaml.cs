@@ -249,6 +249,16 @@ public sealed partial class GameLauncherSettingDialog : ContentDialog
             if (CurrentGameId.GameBiz.IsKnown())
             {
                 CurrentGameBizIcon = new GameBizIcon(CurrentGameId.GameBiz);
+                try
+                {
+                    // 图标统一使用 HoYoPlay 接口返回的图标，接口不可用时保留内置图标。
+                    var info = await _hoyoPlayService.GetGameInfoAsync(CurrentGameId);
+                    if (info is not null)
+                    {
+                        CurrentGameBizIcon.UpdateIcon(info);
+                    }
+                }
+                catch { }
             }
             else
             {
@@ -1002,7 +1012,7 @@ public sealed partial class GameLauncherSettingDialog : ContentDialog
                 return;
             }
             var gamePackage = await _hoyoPlayService.GetGamePackageAsync(CurrentGameId);
-            LatestVersion = gamePackage.Main.Major!.Version;
+            LatestVersion = gamePackage.Main.Major?.Version ?? gamePackage.Main.Patches.FirstOrDefault()?.Version ?? "";
             var list = GetGameResourcePackageGroups(gamePackage.Main);
             var sdk = await _hoyoPlayService.GetGameChannelSDKAsync(CurrentGameId);
             if (sdk is not null)
@@ -1039,67 +1049,62 @@ public sealed partial class GameLauncherSettingDialog : ContentDialog
     private List<PackageGroup> GetGameResourcePackageGroups(GamePackageVersion gameResource)
     {
         var list = new List<PackageGroup>();
-        var fullPackageGroup = new PackageGroup
+        var fullPackages = (gameResource.Major?.GamePackages ?? [])
+            .Concat(gameResource.Major?.AudioPackages ?? [])
+            .ToList();
+        if (fullPackages.Count > 0)
         {
-            Name = Lang.GameResourcePage_FullPackages,
-            Items = new List<PackageItem>()
-        };
-        foreach (var item in gameResource.Major?.GamePackages ?? [])
-        {
-            fullPackageGroup.Items.Add(new PackageItem
+            list.Add(new PackageGroup
             {
-                FileName = Path.GetFileName(item.Url),
-                Url = item.Url,
-                Md5 = item.MD5,
-                PackageSize = item.Size,
-                DecompressSize = item.DecompressedSize,
+                Name = Lang.GameResourcePage_FullPackages,
+                Items = fullPackages.Select(CreatePackageItem).ToList(),
             });
         }
-        foreach (var item in gameResource.Major?.AudioPackages ?? [])
-        {
-            fullPackageGroup.Items.Add(new PackageItem
-            {
-                FileName = Path.GetFileName(item.Url),
-                Url = item.Url,
-                Md5 = item.MD5,
-                PackageSize = item.Size,
-                DecompressSize = item.DecompressedSize,
-            });
-        }
-        list.Add(fullPackageGroup);
 
         foreach (var patch in gameResource.Patches ?? [])
         {
-            var diffPackageGroup = new PackageGroup
+            var items = (patch.GamePackages ?? [])
+                .Concat(patch.AudioPackages ?? [])
+                .ToList();
+            if (items.Count == 0)
+            {
+                continue;
+            }
+            list.Add(new PackageGroup
             {
                 Name = $"{Lang.GameResourcePage_DiffPackages}  {patch.Version}",
-                Items = new List<PackageItem>()
-            };
-            foreach (var item in patch.GamePackages ?? [])
-            {
-                diffPackageGroup.Items.Add(new PackageItem
-                {
-                    FileName = Path.GetFileName(item.Url),
-                    Url = item.Url,
-                    Md5 = item.MD5,
-                    PackageSize = item.Size,
-                    DecompressSize = item.DecompressedSize,
-                });
-            }
-            foreach (var item in patch.AudioPackages ?? [])
-            {
-                diffPackageGroup.Items.Add(new PackageItem
-                {
-                    FileName = Path.GetFileName(item.Url),
-                    Url = item.Url,
-                    Md5 = item.MD5,
-                    PackageSize = item.Size,
-                    DecompressSize = item.DecompressedSize,
-                });
-            }
-            list.Add(diffPackageGroup);
+                Items = items.Select(CreatePackageItem).ToList(),
+            });
         }
         return list;
+    }
+
+
+
+    private static PackageItem CreatePackageItem(GamePackageFile item)
+    {
+        return new PackageItem
+        {
+            FileName = GetFileNameFromUrl(item.Url),
+            Url = item.Url,
+            Md5 = item.MD5,
+            PackageSize = item.Size,
+            DecompressSize = item.DecompressedSize,
+        };
+    }
+
+
+
+    private static string GetFileNameFromUrl(string url)
+    {
+        try
+        {
+            return Path.GetFileName(new Uri(url).AbsolutePath);
+        }
+        catch
+        {
+            return url;
+        }
     }
 
 

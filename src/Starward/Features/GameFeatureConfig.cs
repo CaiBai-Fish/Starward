@@ -100,7 +100,8 @@ internal partial class GameFeatureConfig
 
     private static readonly GameFeatureConfig arknights_cn = new()
     {
-        SupportedPages = [nameof(GameLauncherPage)],
+        SupportedPages = [nameof(GameLauncherPage), nameof(GameSettingPage), nameof(ScreenshotPage)],
+        InGameNoticesWindow = true,
     };
 
 
@@ -117,6 +118,7 @@ internal partial class GameFeatureConfig
         SupportHardLink = true,
         SupportDailyNote = true,
         SupportGameAccountSwitcher = true,
+        InGameNoticesWindow = true,
     };
 
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Composition;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -13,6 +13,15 @@ public partial class TransparentBackdrop : SystemBackdrop
     private readonly WindowsSystemDispatcherQueueHelper dispatcherQueueHelper = new();
 
     private readonly nuint _subclassId = (nuint)Random.Shared.Next(100000, 999999);
+
+    private readonly bool _fillBlack;
+
+
+
+    public TransparentBackdrop(bool fillBlack = true)
+    {
+        _fillBlack = fillBlack;
+    }
 
     ComCtl32.SUBCLASSPROC _wndProcHandler;
 
@@ -64,6 +73,10 @@ public partial class TransparentBackdrop : SystemBackdrop
     {
         if (uMsg == (uint)User32.WindowMessage.WM_PAINT)
         {
+            if (!_fillBlack)
+            {
+                return ComCtl32.DefSubclassProc(hWnd, uMsg, wParam, lParam);
+            }
             var hdc = User32.BeginPaint(hWnd, out var ps);
             if (hdc.IsNull) return new IntPtr(0);
 

@@ -1,4 +1,4 @@
-﻿using Starward.Core.HoYoPlay;
+using Starward.Core.HoYoPlay;
 using Starward.Core.Localization;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +33,8 @@ public class GamePostGroup
             GamePostType.POST_TYPE_ACTIVITY => CoreLang.PostType_Activity,
             GamePostType.POST_TYPE_ANNOUNCE => CoreLang.PostType_Announcement,
             GamePostType.POST_TYPE_INFO => CoreLang.PostType_Information,
-            _ => "",
+            // 鹰角等第三方游戏的公告分组直接使用接口返回的分组名（公告 / 新闻 / 资讯）
+            _ => postType,
         };
     }
 

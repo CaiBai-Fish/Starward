@@ -2816,4 +2816,22 @@ You are welcome to submit the exported data to the following repository:</value>
   <data name="SettingPage_OpenLauncherAfterGameExitDescription" xml:space="preserve">
     <value>Show the launcher window automatically after the game process exits.</value>
   </data>
+  <data name="EndfieldPlannerButton_ToolTip" xml:space="preserve">
+    <value>Endfield Planner (CEP)</value>
+  </data>
+  <data name="EndfieldPlannerWindow_Title" xml:space="preserve">
+    <value>Endfield Planner</value>
+  </data>
+  <data name="EndfieldPlannerWindow_Loading" xml:space="preserve">
+    <value>Loading the Endfield Planner...</value>
+  </data>
+  <data name="EndfieldPlannerWindow_LoadFailed" xml:space="preserve">
+    <value>Failed to load the Endfield Planner.</value>
+  </data>
+  <data name="EndfieldPlannerWindow_Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="EndfieldPlannerWindow_OpenInBrowser" xml:space="preserve">
+    <value>Open in browser</value>
+  </data>
 </root>
