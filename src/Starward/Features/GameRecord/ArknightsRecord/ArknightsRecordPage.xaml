@@ -43,68 +43,115 @@
     </Page.Resources>
 
     <Grid>
-        <ScrollViewer>
-            <StackPanel Padding="24,16,24,24" Spacing="16">
-                <TextBlock FontSize="24" FontWeight="SemiBold" Text="明日方舟战绩" />
-                <ProgressRing x:Name="ProgressRing_Loading"
-                              Width="32"
-                              Height="32"
-                              HorizontalAlignment="Left"
-                              IsActive="True" />
-                <TextBlock x:Name="TextBlock_Error"
-                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                           TextWrapping="Wrap" />
+        <NavigationView x:Name="NavigationView_Records"
+                        IsBackButtonVisible="Collapsed"
+                        IsPaneToggleButtonVisible="False"
+                        IsSettingsVisible="False"
+                        ItemInvoked="NavigationView_Records_ItemInvoked"
+                        OpenPaneLength="248"
+                        PaneDisplayMode="Left">
+            <NavigationView.Resources>
+                <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
+            </NavigationView.Resources>
 
-                <StackPanel x:Name="Panel_Content" Spacing="16" Visibility="Collapsed">
-                    <Border Padding="16"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            CornerRadius="8">
-                        <Grid ColumnSpacing="14">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Image x:Name="Image_Avatar"
-                                   Width="56"
-                                   Height="56"
-                                   VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1" Spacing="4">
-                                <TextBlock x:Name="TextBlock_RoleName"
-                                           FontSize="20"
-                                           FontWeight="SemiBold" />
-                                <TextBlock x:Name="TextBlock_RoleInfo"
-                                           FontSize="13"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Grid>
+            <NavigationView.PaneCustomContent>
+                <Grid Height="56"
+                      HorizontalAlignment="Stretch"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Width="56"
+                            Height="56"
+                            Margin="8,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            CornerRadius="100">
+                        <Image x:Name="Image_Avatar" Stretch="UniformToFill" />
                     </Border>
 
-                    <Pivot x:Name="Pivot_Records">
-                        <PivotItem Header="卫戍协议">
-                            <ItemsControl x:Name="Items_Garrison" ItemTemplate="{StaticResource RecordItemTemplate}" />
-                        </PivotItem>
-                        <PivotItem Header="SideStory">
-                            <ItemsControl x:Name="Items_Activities" ItemTemplate="{StaticResource RecordItemTemplate}" />
-                        </PivotItem>
-                        <PivotItem Header="集成战略">
-                            <ItemsControl x:Name="Items_Rogues" ItemTemplate="{StaticResource RecordItemTemplate}" />
-                        </PivotItem>
-                        <PivotItem Header="生息演算">
-                            <ItemsControl x:Name="Items_Sandboxes" ItemTemplate="{StaticResource RecordItemTemplate}" />
-                        </PivotItem>
-                        <PivotItem Header="保全派驻">
-                            <ItemsControl x:Name="Items_Towers" ItemTemplate="{StaticResource RecordItemTemplate}" />
-                        </PivotItem>
-                        <PivotItem Header="剿灭作战">
-                            <ItemsControl x:Name="Items_Campaigns" ItemTemplate="{StaticResource RecordItemTemplate}" />
-                        </PivotItem>
-                        <PivotItem Header="引航者试炼">
-                            <ItemsControl x:Name="Items_BossRushes" ItemTemplate="{StaticResource RecordItemTemplate}" />
-                        </PivotItem>
-                    </Pivot>
-                </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
+                    <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                        <TextBlock x:Name="TextBlock_RoleName" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="TextBlock_RoleInfo"
+                                   FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <Button Grid.Column="2"
+                            Width="32"
+                            Height="32"
+                            Margin="0,0,12,0"
+                            Padding="0"
+                            Click="Button_Refresh_Click"
+                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
+                            ToolTipService.ToolTip="刷新">
+                        <FontIcon FontSize="14"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                  Glyph="&#xE72C;" />
+                    </Button>
+                </Grid>
+            </NavigationView.PaneCustomContent>
+
+            <NavigationView.MenuItems>
+                <NavigationViewItemSeparator />
+                <NavigationViewItem x:Name="NavigationViewItem_Garrison" Tag="garrison" Content="卫戍协议">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D9;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="sidestory" Content="SideStory">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8A5;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="rogue" Content="集成战略">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F1;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="sandbox" Content="生息演算">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="tower" Content="保全派驻">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F4;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="campaign" Content="剿灭作战">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7FC;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="bossrush" Content="引航者试炼">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7C1;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <Grid>
+                <ScrollViewer>
+                    <StackPanel Padding="24,16,24,24" Spacing="12">
+                        <ProgressRing x:Name="ProgressRing_Loading"
+                                      Width="32"
+                                      Height="32"
+                                      HorizontalAlignment="Left"
+                                      IsActive="True" />
+                        <TextBlock x:Name="TextBlock_Error"
+                                   Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                   TextWrapping="Wrap" />
+                        <ItemsControl x:Name="Items_Records" ItemTemplate="{StaticResource RecordItemTemplate}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </NavigationView>
     </Grid>
 </Page>

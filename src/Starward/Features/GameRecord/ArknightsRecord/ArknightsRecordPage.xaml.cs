@@ -38,7 +38,15 @@ public sealed partial class ArknightsRecordPage : Page
     }
 
 
+    private Dictionary<string, List<ArknightsRecordItemView>> _sections = [];
+
     private async void ArknightsRecordPage_Loaded(object sender, RoutedEventArgs e)
+    {
+        await LoadRecordAsync();
+    }
+
+
+    private async Task LoadRecordAsync()
     {
         try
         {
@@ -46,7 +54,7 @@ public sealed partial class ArknightsRecordPage : Page
             TextBlock_Error.Text = "";
             ArknightsRecord record = await _service.GetRecordAsync();
             TextBlock_RoleName.Text = record.RoleName;
-            TextBlock_RoleInfo.Text = $"UID {record.Uid} · 等级 {record.Level} · 主线 {record.MainStage} · 干员 {record.CharCount} · 时装 {record.SkinCount}";
+            TextBlock_RoleInfo.Text = $"UID {record.Uid} · Lv.{record.Level}";
             if (!string.IsNullOrWhiteSpace(record.AvatarUrl))
             {
                 try
@@ -55,18 +63,21 @@ public sealed partial class ArknightsRecordPage : Page
                 }
                 catch { }
             }
-            else
+            _sections = new()
             {
-                Image_Avatar.Visibility = Visibility.Collapsed;
+                ["garrison"] = BuildGarrison(record),
+                ["sidestory"] = BuildActivities(record),
+                ["rogue"] = BuildRogues(record),
+                ["sandbox"] = BuildSandboxes(record),
+                ["tower"] = BuildTowers(record),
+                ["campaign"] = BuildCampaigns(record),
+                ["bossrush"] = BuildBossRushes(record),
+            };
+            if (NavigationView_Records.SelectedItem is not NavigationViewItem)
+            {
+                NavigationView_Records.SelectedItem = NavigationViewItem_Garrison;
             }
-            Items_Garrison.ItemsSource = BuildGarrison(record);
-            Items_Activities.ItemsSource = BuildActivities(record);
-            Items_Rogues.ItemsSource = BuildRogues(record);
-            Items_Sandboxes.ItemsSource = BuildSandboxes(record);
-            Items_Towers.ItemsSource = BuildTowers(record);
-            Items_Campaigns.ItemsSource = BuildCampaigns(record);
-            Items_BossRushes.ItemsSource = BuildBossRushes(record);
-            Panel_Content.Visibility = Visibility.Visible;
+            ShowSection((NavigationView_Records.SelectedItem as NavigationViewItem)?.Tag as string ?? "garrison");
         }
         catch (Exception ex)
         {
@@ -76,6 +87,27 @@ public sealed partial class ArknightsRecordPage : Page
         {
             ProgressRing_Loading.IsActive = false;
         }
+    }
+
+
+    private void ShowSection(string key)
+    {
+        Items_Records.ItemsSource = _sections.TryGetValue(key, out List<ArknightsRecordItemView>? list) ? list : [];
+    }
+
+
+    private void NavigationView_Records_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+    {
+        if (args.InvokedItemContainer?.Tag is string key)
+        {
+            ShowSection(key);
+        }
+    }
+
+
+    private async void Button_Refresh_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadRecordAsync();
     }
 
 
