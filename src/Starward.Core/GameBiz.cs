@@ -59,6 +59,7 @@ public record struct GameBiz
 
     public const string arknights = "arknights";
     public const string arknights_cn = "arknights_cn";
+    public const string arknights_global = "arknights_global";
 
     public const string kirara = "kirara";
     public const string kirara_cn = "kirara_cn";
@@ -93,6 +94,7 @@ public record struct GameBiz
         endfield_cn,
         endfield_global,
         arknights_cn,
+        arknights_global,
         kirara_cn,
         kirara_global,
     }.AsReadOnly();
@@ -123,7 +125,7 @@ public record struct GameBiz
         hkrpg_cn or hkrpg_global or hkrpg_bilibili => true,
         nap_cn or nap_global or nap_bilibili => true,
         endfield_cn or endfield_global => true,
-        arknights_cn => true,
+        arknights_cn or arknights_global => true,
         kirara_cn or kirara_global => true,
         _ => false,
     };

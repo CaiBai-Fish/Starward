@@ -78,6 +78,7 @@ internal partial class GameFeatureConfig
             GameBiz.nap_global => nap_global,
             GameBiz.nap_bilibili => nap_bilibili,
             GameBiz.arknights_cn => arknights_cn,
+            GameBiz.arknights_global => arknights_global,
             GameBiz.endfield_cn => endfield_cn,
             GameBiz.endfield_global => endfield_global,
             _ => Default,
@@ -102,6 +103,12 @@ internal partial class GameFeatureConfig
     {
         SupportedPages = [nameof(GameLauncherPage), nameof(GameSettingPage), nameof(ScreenshotPage)],
         InGameNoticesWindow = true,
+    };
+
+
+    private static readonly GameFeatureConfig arknights_global = new()
+    {
+        SupportedPages = [nameof(GameLauncherPage), nameof(ScreenshotPage)],
     };
 
 

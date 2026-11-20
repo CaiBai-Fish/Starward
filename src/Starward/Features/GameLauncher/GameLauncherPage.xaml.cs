@@ -121,16 +121,17 @@ public sealed partial class GameLauncherPage : PageBase
         await Task.Delay(1);
         bool isThirdParty = ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz);
         bool isHypergryph = HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz);
-        if (isThirdParty && !isHypergryph && GameState is GameState.InstallGame)
+        bool isYostarArknights = CurrentGameBiz == GameBiz.arknights_global;
+        if (isThirdParty && !isHypergryph && !isYostarArknights && GameState is GameState.InstallGame)
         {
             await LocateGameAsync();
             return;
         }
-        if (isThirdParty && GameState is GameState.GameIsRunning)
+        if (isThirdParty && !isYostarArknights && GameState is GameState.GameIsRunning)
         {
             return;
         }
-        if (isThirdParty && !isHypergryph && GameState is GameState.StartGame)
+        if (isThirdParty && !isHypergryph && !isYostarArknights && GameState is GameState.StartGame)
         {
             await OpenOfficialLauncherAsync();
             return;
@@ -350,7 +351,7 @@ public sealed partial class GameLauncherPage : PageBase
     {
         try
         {
-            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && !HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz))
+            if (ThirdPartyGameService.IsThirdPartyGame(CurrentGameBiz) && !HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz) && CurrentGameBiz != GameBiz.arknights_global)
             {
                 await CheckThirdPartyGameStateAsync();
                 return;
@@ -457,6 +458,12 @@ public sealed partial class GameLauncherPage : PageBase
     {
         try
         {
+            if (CurrentGameBiz == GameBiz.arknights_global)
+            {
+                IsDX12OptionVisible = false;
+                IsDX11OptionVisible = false;
+                return;
+            }
             if (HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz) && CurrentGameBiz.Game == GameBiz.endfield)
             {
                 IsDX12OptionVisible = false;

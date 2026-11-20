@@ -1,6 +1,7 @@
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Yostar;
 using Starward.Features.GameLauncher;
 using Starward.Features.Hypergryph;
 using System;
@@ -28,6 +29,7 @@ internal static class ThirdPartyGameService
     [
         new(GameBiz.endfield_cn, "Endfield.exe", ["Endfield Game", "Endfield", "Hypergryph Launcher/games/Endfield Game"]),
         new(GameBiz.arknights_cn, "Arknights.exe", ["Arknights", "Hypergryph Launcher/games/Arknights"]),
+        new(GameBiz.arknights_global, "Arknights.exe", ["YostarGames/Arknights_EN", "YostarGames\\Arknights_EN"]),
         new(GameBiz.kirara_cn, "Wuthering Waves.exe", ["Wuthering Waves Game", "Wuthering Waves", "Kuro Games/Wuthering Waves", "Kuro Games/Wuthering Waves Game"]),
         new(GameBiz.kirara_global, "Wuthering Waves.exe", ["Wuthering Waves Game", "Wuthering Waves", "Kuro Games/Wuthering Waves", "Kuro Games/Wuthering Waves Game"]),
     ];
@@ -76,6 +78,10 @@ internal static class ThirdPartyGameService
             return null;
         }
         string name = gameBiz.ToGameName();
+        bool isYostarArknights = gameBiz == GameBiz.arknights_global;
+        string icon = isYostarArknights ? YostarGameConstants.Icon : TransparentImage;
+        string background = isYostarArknights ? YostarGameConstants.Background : TransparentImage;
+        string logo = isYostarArknights ? YostarGameConstants.ListLogo : TransparentImage;
         return new GameInfo
         {
             Id = gameId.Id,
@@ -88,10 +94,10 @@ internal static class ThirdPartyGameService
                 Name = name,
                 Title = name,
                 Subtitle = "",
-                Icon = new GameImage { Url = TransparentImage, Link = "" },
-                Logo = new GameImage { Url = TransparentImage, Link = "" },
-                Thumbnail = new GameImage { Url = TransparentImage, Link = "" },
-                Background = new GameImage { Url = TransparentImage, Link = "" },
+                Icon = new GameImage { Url = icon, Link = "" },
+                Logo = new GameImage { Url = logo, Link = "" },
+                Thumbnail = new GameImage { Url = background, Link = "" },
+                Background = new GameImage { Url = background, Link = "" },
             },
         };
     }
@@ -129,6 +135,11 @@ internal static class ThirdPartyGameService
         if (HypergryphGameConstants.IsHypergryphGame(gameBiz))
         {
             relativePaths = ["Hypergryph Launcher/Launcher.exe", "Hypergryph Launcher/1.6.0/Launcher.exe"];
+        }
+        else if (gameBiz == GameBiz.arknights_global)
+        {
+            // 明日方舟国际服由 Starward 直接启动，不依赖 Yostar 启动器进程。
+            return null;
         }
         else if (Profiles.Any(x => x.GameBiz == gameBiz))
         {
@@ -181,15 +192,26 @@ internal static class ThirdPartyGameService
     {
         try
         {
+            List<string> roots = [];
             foreach (DriveInfo drive in DriveInfo.GetDrives())
             {
-                if (!drive.IsReady || drive.DriveType is not (DriveType.Fixed or DriveType.Removable))
+                if (drive.IsReady && drive.DriveType is DriveType.Fixed or DriveType.Removable)
                 {
-                    continue;
+                    roots.Add(drive.RootDirectory.FullName);
                 }
+            }
+            roots.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs"));
+            roots.Add(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+            roots.Add(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86));
+            if (AppConfig.DefaultGameInstallationPath is string defaultPath && !string.IsNullOrWhiteSpace(defaultPath))
+            {
+                roots.Add(defaultPath);
+            }
+            foreach (string root in roots.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
                 foreach (string folder in profile.InstallFolderNames)
                 {
-                    string path = Path.Combine(drive.RootDirectory.FullName, folder);
+                    string path = Path.Combine(root, folder);
                     if (File.Exists(Path.Combine(path, profile.ExeName)))
                     {
                         return path;

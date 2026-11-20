@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Media;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Yostar;
 using Starward.Features.GameLauncher;
 using Starward.Features.HoYoPlay;
 using Starward.Helpers;
@@ -35,6 +36,12 @@ public sealed partial class InstallGameDialog : ContentDialog
     private readonly HoYoPlayService _hoYoPlayService = AppConfig.GetService<HoYoPlayService>();
 
     private readonly GameInstallService _gameInstallService = AppConfig.GetService<GameInstallService>();
+
+    private readonly YostarGameClient _yostarGameClient = AppConfig.GetService<YostarGameClient>();
+
+    private bool _isYostarArknights;
+
+    private long _yostarManifestBytes;
 
 
     public InstallGameDialog()
@@ -105,9 +112,11 @@ public sealed partial class InstallGameDialog : ContentDialog
                 {
                     baseFolder = Path.Combine(
                         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                        HypergryphGameConstants.IsHypergryphGame(CurrentGameId.GameBiz)
-                            ? HypergryphGameConstants.GetGameProfile(CurrentGameId.GameBiz).PublisherDirectory
-                            : "miHoYo");
+                        CurrentGameId.GameBiz == GameBiz.arknights_global
+                            ? ""
+                            : HypergryphGameConstants.IsHypergryphGame(CurrentGameId.GameBiz)
+                                ? HypergryphGameConstants.GetGameProfile(CurrentGameId.GameBiz).PublisherDirectory
+                                : "miHoYo");
                 }
             }
             string target = Path.Combine(baseFolder, GetInstallationDirectoryName());
@@ -124,6 +133,10 @@ public sealed partial class InstallGameDialog : ContentDialog
 
     private string GetInstallationDirectoryName()
     {
+        if (CurrentGameId.GameBiz == GameBiz.arknights_global)
+        {
+            return Path.Combine(YostarGameConstants.RootDirectoryName, YostarGameConstants.GameDirectoryName);
+        }
         return HypergryphGameConstants.IsHypergryphGame(CurrentGameId.GameBiz)
             ? HypergryphGameConstants.GetGameProfile(CurrentGameId.GameBiz).InstallationDirectory
             : CurrentGameId.GameBiz;
@@ -135,6 +148,22 @@ public sealed partial class InstallGameDialog : ContentDialog
     {
         try
         {
+            if (CurrentGameId.GameBiz == GameBiz.arknights_global)
+            {
+                YostarGameConfig yostarConfig = await _yostarGameClient.GetGameConfigAsync();
+                YostarManifest manifest = await _yostarGameClient.GetLatestManifestAsync();
+                if (yostarConfig.IsEmpty || manifest.Files.Count == 0)
+                {
+                    _logger.LogWarning("Yostar game config or manifest is empty.");
+                    this.Hide();
+                    return;
+                }
+                _isYostarArknights = true;
+                _yostarManifestBytes = manifest.Files.Sum(x => x.Size);
+                ComputePackageSize();
+                CheckCanStartInstallation();
+                return;
+            }
             GameConfig? config = await _hoYoPlayService.GetGameConfigAsync(CurrentGameId);
             if (config is null)
             {
@@ -251,9 +280,12 @@ public sealed partial class InstallGameDialog : ContentDialog
     {
         try
         {
-            long size = 0;
+            long size = _isYostarArknights ? _yostarManifestBytes : 0;
             List<string?> langs = Segmented_SelectLanguage.SelectedItems.Cast<SegmentedItem>().Select(x => x.Tag as string).ToList();
-            if (_gamePackage is not null)
+            if (_isYostarArknights)
+            {
+            }
+            else if (_gamePackage is not null)
             {
                 size += _gamePackage.Main.Major!.GamePackages.Sum(x => x.DecompressedSize);
                 foreach (string? lang in langs)
@@ -307,7 +339,7 @@ public sealed partial class InstallGameDialog : ContentDialog
         {
             ErrorMessage = null;
             Button_StartInstallation.IsEnabled = false;
-            if (_gamePackage is not null || _gameSophonChunkBuild is not null)
+            if (_gamePackage is not null || _gameSophonChunkBuild is not null || _isYostarArknights)
             {
                 if (DriveHelper.GetDriveType(InstallationPath) is DriveType.Network && !new Uri(InstallationPath).IsUnc)
                 {
@@ -409,7 +441,7 @@ public sealed partial class InstallGameDialog : ContentDialog
             {
                 GameLauncherService.ChangeGameInstallPath(CurrentGameId, InstallationPath);
                 WeakReferenceMessenger.Default.Send(new GameInstallTaskStartedMessage(task));
-                if (_selectPath is not null && InstallationPath.EndsWith(CurrentGameId.GameBiz))
+                if (_selectPath is not null && InstallationPath.EndsWith(GetInstallationDirectoryName()))
                 {
                     AppConfig.DefaultGameInstallationPath = _selectPath;
                 }

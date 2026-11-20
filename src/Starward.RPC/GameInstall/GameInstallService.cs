@@ -226,6 +226,12 @@ internal class GameInstallService
                 await hypergryphService.ExecuteAsync(context, cancellationToken);
                 goto TaskCompleted;
             }
+            if (context.GameId.GameBiz == GameBiz.arknights_global)
+            {
+                YostarArknightsGameInstallService yostarService = _serviceProvider.GetRequiredService<YostarArknightsGameInstallService>();
+                await yostarService.ExecuteAsync(context, cancellationToken);
+                goto TaskCompleted;
+            }
             GamePackageService gamePackageService = _serviceProvider.GetRequiredService<GamePackageService>();
             if (context.AudioLanguage is not AudioLanguage.None)
             {

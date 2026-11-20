@@ -254,6 +254,10 @@ internal partial class GamePackageService
     /// <returns></returns>
     public async Task<AudioLanguage> GetAudioLanguageAsync(GameId gameId, string? installPath = null)
     {
+        if (gameId.GameBiz == GameBiz.arknights_global)
+        {
+            return AudioLanguage.None;
+        }
         GameConfig? config = await _hoYoPlayService.GetGameConfigAsync(gameId);
         if (string.IsNullOrWhiteSpace(config?.AudioPackageScanDir))
         {
@@ -284,6 +288,10 @@ internal partial class GamePackageService
     /// <returns></returns>
     public async Task SetAudioLanguageAsync(GameId gameId, string installPath, AudioLanguage lang)
     {
+        if (gameId.GameBiz == GameBiz.arknights_global)
+        {
+            return;
+        }
         GameConfig? config = await _hoYoPlayService.GetGameConfigAsync(gameId);
         if (string.IsNullOrWhiteSpace(config?.AudioPackageScanDir))
         {

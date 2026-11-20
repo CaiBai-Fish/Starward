@@ -10,6 +10,7 @@ using Starward.Core.GameRecord;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
 using Starward.Core.SelfQuery;
+using Starward.Core.Yostar;
 using Starward.Features.Background;
 using Starward.Features.Database;
 using Starward.Features.Gacha;
@@ -58,6 +59,7 @@ public static partial class AppConfig
 
             sc.AddSingleton<HoYoPlayClient>();
             sc.AddHttpClient<HypergryphLauncherClient>();
+        sc.AddHttpClient<YostarGameClient>();
             sc.AddSingleton<GameNoticeClient>();
             sc.AddSingleton<HoYoPlayService>();
             sc.AddSingleton<BackgroundService>();

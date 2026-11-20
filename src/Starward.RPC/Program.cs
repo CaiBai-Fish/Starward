@@ -104,6 +104,7 @@ public static class RpcRunner
         });
         builder.Services.AddHttpClient<HoYoPlayClient>().AddPolicyHandler(GetHttpRetryPolicy());
         builder.Services.AddHttpClient<HypergryphLauncherClient>().AddPolicyHandler(GetHttpRetryPolicy());
+        builder.Services.AddHttpClient<Starward.Core.Yostar.YostarGameClient>().AddPolicyHandler(GetHttpRetryPolicy());
 
 
         builder.Logging.ClearProviders();
@@ -116,6 +117,7 @@ public static class RpcRunner
         builder.Services.AddSingleton<GameInstallService>();
         builder.Services.AddSingleton<GameInstallHelper>();
         builder.Services.AddScoped<HypergryphGameInstallService>();
+        builder.Services.AddScoped<YostarArknightsGameInstallService>();
         builder.Services.AddScoped<GameUninstallService>();
 
 

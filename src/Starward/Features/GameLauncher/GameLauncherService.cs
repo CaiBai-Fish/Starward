@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Yostar;
 using Starward.Features.GameSetting;
 using Starward.Features.HoYoPlay;
 using Starward.Features.ThirdParty;
@@ -13,6 +14,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -33,14 +35,17 @@ internal partial class GameLauncherService
 
     private readonly HypergryphLauncherClient _hypergryphLauncherClient;
 
+    private readonly YostarGameClient _yostarGameClient;
 
-    public GameLauncherService(ILogger<GameLauncherService> logger, HoYoPlayService hoYoPlayService, PlayTimeRecordService playTimeRecorderService, GameAuthLoginService gameAuthLoginService, HypergryphLauncherClient hypergryphLauncherClient)
+
+    public GameLauncherService(ILogger<GameLauncherService> logger, HoYoPlayService hoYoPlayService, PlayTimeRecordService playTimeRecorderService, GameAuthLoginService gameAuthLoginService, HypergryphLauncherClient hypergryphLauncherClient, YostarGameClient yostarGameClient)
     {
         _logger = logger;
         _hoYoPlayService = hoYoPlayService;
         _playTimeRecorderService = playTimeRecorderService;
         _gameAuthLoginService = gameAuthLoginService;
         _hypergryphLauncherClient = hypergryphLauncherClient;
+        _yostarGameClient = yostarGameClient;
     }
 
 
@@ -157,6 +162,15 @@ internal partial class GameLauncherService
             // 官方启动器写入的版本文件是加密的，无法直接读取时按 0.0.0 处理。
             return new Version(0, 0, 0);
         }
+        if (gameBiz == GameBiz.arknights_global)
+        {
+            installPath ??= GetGameInstallPath(gameBiz);
+            if (string.IsNullOrWhiteSpace(installPath))
+            {
+                return null;
+            }
+            return await ReadYostarLocalVersionAsync(installPath);
+        }
         if (ThirdPartyGameService.IsThirdPartyGame(gameBiz))
         {
             // 库洛游戏的版本与更新由对应官方启动器管理。
@@ -191,6 +205,33 @@ internal partial class GameLauncherService
     private static partial Regex GameVersionRegex();
 
 
+    /// <summary>
+    /// 读取明日方舟国际服本地版本（manifest.json 或 game-launcher-config.json）。
+    /// </summary>
+    private static async Task<Version?> ReadYostarLocalVersionAsync(string installPath)
+    {
+        foreach (string fileName in new[] { YostarGameConstants.ManifestFileName, YostarGameConstants.ConfigFileName })
+        {
+            string path = Path.Join(installPath, fileName);
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(await File.ReadAllTextAsync(path));
+                if (document.RootElement.TryGetProperty("version", out JsonElement version)
+                    && Version.TryParse(version.GetString(), out Version? parsed))
+                {
+                    return parsed;
+                }
+            }
+            catch { }
+        }
+        return null;
+    }
+
+
 
     /// <summary>
     /// 最新游戏版本
@@ -210,6 +251,12 @@ internal partial class GameLauncherService
                 _ = Version.TryParse(latest.PrePatch.TargetVersion, out predownloadVersion);
             }
             return (latestVersion, predownloadVersion);
+        }
+        if (gameId.GameBiz == GameBiz.arknights_global)
+        {
+            YostarGameConfig yostarConfig = await _yostarGameClient.GetGameConfigAsync();
+            _ = Version.TryParse(yostarConfig.LatestVersion, out Version? latestVersion);
+            return (latestVersion, null);
         }
         if (ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz))
         {
