@@ -206,7 +206,9 @@ public sealed partial class GameBannerAndPost : UserControl
         {
             return null;
         }
-        news = news.GroupBy(x => x.Link).Select(x => x.First()).ToList();
+        // 同一新闻可能同时出现在 LATEST 与 event 分组，按 (分组, 链接) 去重，
+        // 保留官方接口的“活动 / 公告 / 资讯”分组。
+        news = news.GroupBy(x => (x.TypeLabel, x.Link)).Select(x => x.First()).ToList();
         string? backgroundUrl = null;
         try
         {
@@ -214,6 +216,7 @@ public sealed partial class GameBannerAndPost : UserControl
         }
         catch { }
         List<GameBanner> banners = news.Where(x => !string.IsNullOrWhiteSpace(x.Thumbnail))
+                                       .GroupBy(x => x.Link).Select(x => x.First())
                                        .Take(5)
                                        .Select((x, i) => new GameBanner
                                        {
