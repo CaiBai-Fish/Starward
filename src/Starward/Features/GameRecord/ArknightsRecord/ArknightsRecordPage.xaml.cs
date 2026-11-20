@@ -2,6 +2,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Starward.Core.HoYoPlay;
+using Starward.Features.Gacha.Endfield;
+using Starward.Features.GameRecord.DailyNote;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +31,8 @@ public sealed class ArknightsRecordItemView
 public sealed partial class ArknightsRecordPage : Page
 {
     private readonly ArknightsRecordService _service = AppConfig.GetService<ArknightsRecordService>();
+
+    private readonly ArknightsDailyNoteService _dailyNoteService = AppConfig.GetService<ArknightsDailyNoteService>();
 
     public GameId? CurrentGameId { get; set; }
 
@@ -75,6 +79,9 @@ public sealed partial class ArknightsRecordPage : Page
                 NavigationView_Records.SelectedItem = NavigationViewItem_Garrison;
             }
             ShowSection((NavigationView_Records.SelectedItem as NavigationViewItem)?.Tag as string ?? "garrison");
+            ArknightsAccount? account = _dailyNoteService.GetAccount();
+            Button_LoginArknights.Visibility = account is null ? Visibility.Visible : Visibility.Collapsed;
+            Button_AccountList.Visibility = account is null ? Visibility.Collapsed : Visibility.Visible;
         }
         catch (Exception ex)
         {
@@ -101,7 +108,7 @@ public sealed partial class ArknightsRecordPage : Page
         }
         if (key == "h5")
         {
-            new ArknightsGameDataWindow().Activate();
+            ArknightsGameDataWindow.ShowWindow();
             return;
         }
         ShowSection(key);
@@ -111,6 +118,32 @@ public sealed partial class ArknightsRecordPage : Page
     private async void Button_Refresh_Click(object sender, RoutedEventArgs e)
     {
         await LoadRecordAsync();
+    }
+
+
+    private async void Button_LoginArknights_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            EndfieldLoginDialog dialog = new() { XamlRoot = this.XamlRoot };
+            await dialog.ShowAsync();
+            if (string.IsNullOrWhiteSpace(dialog.LoginToken))
+            {
+                return;
+            }
+            await _dailyNoteService.AddAccountAsync(dialog.LoginToken);
+            await LoadRecordAsync();
+        }
+        catch (Exception ex)
+        {
+            TextBlock_Error.Text = ex.Message;
+        }
+    }
+
+
+    private void NavigationViewItem_UpdateDeviceInfo_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+    {
+        ArknightsGameDataWindow.UpdateDeviceFingerprint();
     }
 
 

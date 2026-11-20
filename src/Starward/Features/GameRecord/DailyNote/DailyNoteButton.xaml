@@ -863,7 +863,7 @@
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Width="20"
                                        Height="20"
-                                       Source="ms-appx:///Assets/Image/icon_arknights_ap.png" />
+                                       Source="ms-appx:///Assets/Image/icon_sanity_white.svg" />
                                 <TextBlock VerticalAlignment="Center" FontSize="15">
                                     <Run Text="{x:Bind ArknightsDailyNote.CurrentAp}" /><Run Text=" / " /><Run Text="{x:Bind ArknightsDailyNote.MaxAp}" />
                                 </TextBlock>

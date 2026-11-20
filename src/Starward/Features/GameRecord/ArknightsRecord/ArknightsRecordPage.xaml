@@ -83,17 +83,65 @@
                                    TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
-                    <Button Grid.Column="2"
-                            Width="32"
-                            Height="32"
+                    <Button x:Name="Button_LoginArknights"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2"
+                            Margin="0,0,12,0"
+                            BorderThickness="0"
+                            Click="Button_LoginArknights_Click"
+                            Content="登录"
+                            Style="{ThemeResource AccentButtonStyle}"
+                            Visibility="Collapsed" />
+
+                    <Button x:Name="Button_AccountList"
+                            Grid.Column="2"
+                            Width="28"
+                            Height="44"
                             Margin="0,0,12,0"
                             Padding="0"
-                            Click="Button_Refresh_Click"
                             Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
-                            ToolTipService.ToolTip="刷新">
-                        <FontIcon FontSize="14"
-                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                  Glyph="&#xE72C;" />
+                            Visibility="Collapsed">
+                        <StackPanel Spacing="-6">
+                            <FontIcon FontSize="16"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                      Glyph="&#xE70E;" />
+                            <FontIcon FontSize="16"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                      Glyph="&#xE70D;" />
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style BasedOn="{StaticResource DefaultFlyoutPresenterStyle}" TargetType="FlyoutPresenter">
+                                        <Setter Property="Background" Value="{ThemeResource CustomAcrylicBrush}" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Padding" Value="4" />
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <StackPanel MinWidth="240"
+                                            Padding="4"
+                                            Spacing="4">
+                                    <Button HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Click="Button_Refresh_Click"
+                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <FontIcon FontSize="16" Glyph="&#xE72C;" />
+                                            <TextBlock VerticalAlignment="Center" Text="刷新信息" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Click="Button_LoginArknights_Click"
+                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <FontIcon FontSize="16" Glyph="&#xE710;" />
+                                            <TextBlock VerticalAlignment="Center" Text="登录鹰角账号" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
                     </Button>
                 </Grid>
             </NavigationView.PaneCustomContent>
@@ -121,7 +169,19 @@
                         <ImageIcon Source="ms-appx:///Assets/Image/ced4deac2162690105bbc8baad2b51a3_4109616186965788891.png" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
             </NavigationView.MenuItems>
+
+            <NavigationView.PaneFooter>
+                <NavigationViewItem x:Name="NavigationViewItem_UpdateDeviceInfo"
+                                    Margin="-2,0,0,-4"
+                                    Content="更新设备指纹"
+                                    Tapped="NavigationViewItem_UpdateDeviceInfo_Tapped">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE928;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.PaneFooter>
 
             <Grid>
                 <ScrollViewer>
