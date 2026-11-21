@@ -8,8 +8,10 @@ using Starward.Features.Gacha.Endfield;
 using Starward.Features.GameRecord.DailyNote;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 
 namespace Starward.Features.GameRecord.ArknightsRecord;
@@ -37,6 +39,8 @@ public sealed partial class ArknightsRecordPage : Page
     private readonly ArknightsDailyNoteService _dailyNoteService = AppConfig.GetService<ArknightsDailyNoteService>();
 
     public GameId? CurrentGameId { get; set; }
+
+    public ObservableCollection<ArknightsAccount> Accounts { get; } = [];
 
     public ArknightsRecordPage()
     {
@@ -129,6 +133,12 @@ public sealed partial class ArknightsRecordPage : Page
             }
             ShowSection((NavigationView_Records.SelectedItem as NavigationViewItem)?.Tag as string ?? "garrison");
             ArknightsAccount? account = _dailyNoteService.GetAccount();
+            Accounts.Clear();
+            if (account is not null)
+            {
+                Accounts.Add(account);
+                ListView_Accounts.SelectedItem = account;
+            }
             Button_LoginArknights.Visibility = account is null ? Visibility.Visible : Visibility.Collapsed;
             Button_AccountList.Visibility = account is null ? Visibility.Collapsed : Visibility.Visible;
         }
@@ -245,6 +255,17 @@ public sealed partial class ArknightsRecordPage : Page
         catch (Exception ex)
         {
             TextBlock_Error.Text = ex.Message;
+        }
+    }
+
+
+    private void MenuFlyoutItem_CopyUid_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem { Tag: string uid } && !string.IsNullOrWhiteSpace(uid))
+        {
+            DataPackage package = new();
+            package.SetText(uid);
+            Clipboard.SetContent(package);
         }
     }
 

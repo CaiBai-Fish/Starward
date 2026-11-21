@@ -4,6 +4,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:local="using:Starward.Features.GameRecord.ArknightsRecord"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:dn="using:Starward.Features.GameRecord.DailyNote"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d">
 
@@ -118,10 +119,22 @@
                                         <Setter Property="Padding" Value="4" />
                                     </Style>
                                 </Flyout.FlyoutPresenterStyle>
-                                <StackPanel MinWidth="240"
-                                            Padding="4"
-                                            Spacing="4">
-                                    <Button HorizontalAlignment="Stretch"
+                                <Grid MinWidth="260"
+                                      Padding="0,8,0,8"
+                                      RowSpacing="4">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Column="0"
+                                            Margin="4,0,4,0"
+                                            HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Left"
                                             Click="Button_Refresh_Click"
                                             Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
@@ -130,16 +143,67 @@
                                             <TextBlock VerticalAlignment="Center" Text="刷新信息" />
                                         </StackPanel>
                                     </Button>
-                                    <Button HorizontalAlignment="Stretch"
+
+                                    <Button Grid.Column="1"
+                                            Margin="4,0,4,0"
+                                            HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Left"
                                             Click="Button_LoginArknights_Click"
                                             Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon FontSize="16" Glyph="&#xE710;" />
-                                            <TextBlock VerticalAlignment="Center" Text="登录鹰角账号" />
+                                            <TextBlock VerticalAlignment="Center" Text="登录" />
                                         </StackPanel>
                                     </Button>
-                                </StackPanel>
+
+                                    <MenuFlyoutSeparator Grid.Row="1" Grid.ColumnSpan="2" />
+
+                                    <ListView Name="ListView_Accounts"
+                                              Grid.Row="2"
+                                              Grid.ColumnSpan="2"
+                                              ItemsSource="{x:Bind Accounts}"
+                                              SelectionMode="Single">
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="dn:ArknightsAccount">
+                                                <Grid Padding="0,6,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="{x:Bind NickName}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock FontSize="12"
+                                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                            <Run Text="{x:Bind ServerName}" />
+                                                            <Run Text=" · UID " /><Run Text="{x:Bind Uid}" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1"
+                                                            Width="36"
+                                                            Height="28"
+                                                            Padding="0"
+                                                            VerticalAlignment="Stretch"
+                                                            Content="&#xE712;"
+                                                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
+                                                        <Button.Flyout>
+                                                            <MenuFlyout Placement="RightEdgeAlignedTop">
+                                                                <MenuFlyoutItem Click="MenuFlyoutItem_CopyUid_Click"
+                                                                                Tag="{x:Bind Uid}"
+                                                                                Text="复制 UID">
+                                                                    <MenuFlyoutItem.Icon>
+                                                                        <FontIcon Glyph="&#xE8C8;" />
+                                                                    </MenuFlyoutItem.Icon>
+                                                                </MenuFlyoutItem>
+                                                            </MenuFlyout>
+                                                        </Button.Flyout>
+                                                    </Button>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </Grid>
                             </Flyout>
                         </Button.Flyout>
                     </Button>
