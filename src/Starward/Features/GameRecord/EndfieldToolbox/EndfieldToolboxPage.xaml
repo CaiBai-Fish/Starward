@@ -113,28 +113,68 @@
             <NavigationView.MenuItems>
                 <NavigationViewItemSeparator />
 
-                <NavigationViewItem Tag="account" Content="账号记录">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8C7;" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem Tag="account">
+                    <NavigationViewItem.Content>
+                        <Grid Margin="-2,0,0,0" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Image Width="20" Height="20">
+                                <Image.Source>
+                                    <SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_protocol.svg" />
+                                </Image.Source>
+                            </Image>
+                            <TextBlock Grid.Column="1" Text="账号记录" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </NavigationViewItem.Content>
                 </NavigationViewItem>
 
-                <NavigationViewItem Tag="crisis" Content="危机合约">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7BA;" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem Tag="crisis">
+                    <NavigationViewItem.Content>
+                        <Grid Margin="-2,0,0,0" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Image Width="20" Height="20">
+                                <Image.Source>
+                                    <SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_authority.svg" />
+                                </Image.Source>
+                            </Image>
+                            <TextBlock Grid.Column="1" Text="危机合约" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </NavigationViewItem.Content>
                 </NavigationViewItem>
 
-                <NavigationViewItem Tag="war" Content="战争回响">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7C3;" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem Tag="war">
+                    <NavigationViewItem.Content>
+                        <Grid Margin="-2,0,0,0" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Image Width="20" Height="20" Source="ms-appx:///Assets/Image/Endfield/icon_realtime.png" />
+                            <TextBlock Grid.Column="1" Text="战争回响" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </NavigationViewItem.Content>
                 </NavigationViewItem>
 
-                <NavigationViewItem Tag="monument" Content="影拓丰碑">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8A5;" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem Tag="monument">
+                    <NavigationViewItem.Content>
+                        <Grid Margin="-2,0,0,0" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Image Width="20" Height="20">
+                                <Image.Source>
+                                    <SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_daily.svg" />
+                                </Image.Source>
+                            </Image>
+                            <TextBlock Grid.Column="1" Text="影拓丰碑" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </NavigationViewItem.Content>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
 
