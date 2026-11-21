@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<sf:PageBase x:Class="Starward.Features.GameRecord.EndfieldToolbox.CrisisContractPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:Starward.Features.GameRecord.EndfieldToolbox"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:prim="using:Microsoft.UI.Xaml.Controls.Primitives"
+             xmlns:sf="using:Starward.Frameworks"
+             x:DefaultBindMode="OneWay"
+             mc:Ignorable="d">
+
+    <Page.Resources>
+        <DataTemplate x:Key="CrisisRecordTemplate" x:DataType="local:CrisisContractRecordView">
+            <Border Margin="0,0,0,10"
+                    Style="{StaticResource EndfieldCardStyle}"
+                    Tapped="RecordCard_Tapped">
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Spacing="10">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="{ThemeResource EndfieldGoldBrush}"
+                                       Text="{x:Bind StatusText}" />
+                            <StackPanel Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        Spacing="6">
+                                <FontIcon FontSize="12"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          Glyph="&#xE787;" />
+                                <TextBlock Style="{StaticResource EndfieldMetaTextStyle}" Text="{x:Bind TimeAgo}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock FontSize="40"
+                                       FontWeight="Bold"
+                                       Foreground="{ThemeResource EndfieldGoldBrush}"
+                                       Text="{x:Bind IndicatorCountText}" />
+                            <StackPanel VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        Spacing="5">
+                                <Polygon Width="10"
+                                         Height="12"
+                                         Fill="{ThemeResource EndfieldGoldBrush}"
+                                         Points="5,0 10,6 5,12 0,6"
+                                         Visibility="{x:Bind HasWave1, Converter={StaticResource EndfieldBoolToVisibility}}" />
+                                <Polygon Width="10"
+                                         Height="12"
+                                         Fill="{ThemeResource EndfieldGoldBrush}"
+                                         Points="5,0 10,6 5,12 0,6"
+                                         Visibility="{x:Bind HasWave2, Converter={StaticResource EndfieldBoolToVisibility}}" />
+                                <Polygon Width="10"
+                                         Height="12"
+                                         Fill="{ThemeResource EndfieldGoldBrush}"
+                                         Points="5,0 10,6 5,12 0,6"
+                                         Visibility="{x:Bind HasWave3, Converter={StaticResource EndfieldBoolToVisibility}}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock FontSize="13"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="指标总计" />
+                            <Border Background="{ThemeResource EndfieldGoldSoftBrush}"
+                                    CornerRadius="4"
+                                    Padding="7,1"
+                                    Visibility="{x:Bind ShowNewBadge, Converter={StaticResource EndfieldBoolToVisibility}}">
+                                <TextBlock FontSize="11"
+                                           Foreground="{ThemeResource EndfieldGoldBrush}"
+                                           Text="新纪录" />
+                            </Border>
+                            <TextBlock FontSize="12"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                       Text="{x:Bind WaveText}" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock FontSize="28"
+                                       FontWeight="SemiBold"
+                                       Foreground="{ThemeResource EndfieldGoldBrush}"
+                                       Text="{x:Bind DurationText}" />
+                            <TextBlock Margin="0,0,0,4"
+                                       VerticalAlignment="Bottom"
+                                       FontSize="13"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="行动时长" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ItemsControl Grid.Column="1"
+                                  VerticalAlignment="Top"
+                                  ItemTemplate="{StaticResource EndfieldCharCardTemplate}"
+                                  ItemsSource="{x:Bind Chars}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid x:Name="Grid_Root">
+        <ScrollViewer x:Name="ScrollViewer_Main"
+                      HorizontalScrollBarVisibility="Disabled"
+                      HorizontalScrollMode="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <Grid x:Name="Panel_Layout">
+            <StackPanel Padding="24,20,24,40"
+                        HorizontalAlignment="Stretch"
+                        Spacing="16">
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock FontSize="26"
+                                   FontWeight="SemiBold"
+                                   Text="危机合约" />
+                        <TextBlock Style="{StaticResource EndfieldMetaTextStyle}" Text="森空岛 · 终末地赛季战绩" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Click="Button_Refresh_Click"
+                            Style="{StaticResource EndfieldGhostButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon FontSize="14" Glyph="&#xE72C;" />
+                            <TextBlock Text="刷新" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <InfoBar x:Name="InfoBar_Message"
+                         IsClosable="False"
+                         IsOpen="False"
+                         Severity="Informational" />
+
+                <ProgressRing x:Name="ProgressRing_Loading"
+                              Width="32"
+                              Height="32"
+                              HorizontalAlignment="Left"
+                              IsActive="False"
+                              Visibility="Collapsed" />
+
+                <StackPanel x:Name="Panel_Content" Spacing="16" Visibility="Collapsed">
+
+                    <Border x:Name="Border_Banner"
+                            Height="208"
+                            BorderBrush="{ThemeResource EndfieldStrokeBrush}"
+                            BorderThickness="1"
+                            CornerRadius="14">
+                        <Grid>
+                            <Image x:Name="Image_Banner" Opacity="0.9" Stretch="UniformToFill" />
+                            <Border>
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Offset="0" Color="#F20A0D12" />
+                                        <GradientStop Offset="0.55" Color="#D90A0D12" />
+                                        <GradientStop Offset="1" Color="#4D0A0D12" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+
+                            <Grid Padding="22,20,20,18" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Top" Spacing="10">
+                                    <Border Padding="10,3"
+                                            HorizontalAlignment="Left"
+                                            Background="#333F79D8"
+                                            BorderBrush="#663F79D8"
+                                            BorderThickness="1"
+                                            CornerRadius="4">
+                                        <TextBlock FontSize="12"
+                                                   Foreground="White"
+                                                   Text="{x:Bind Record.SeasonType}" />
+                                    </Border>
+                                    <TextBlock FontSize="30"
+                                               FontWeight="SemiBold"
+                                               Foreground="White"
+                                               Text="{x:Bind Record.SeasonName}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock FontSize="13"
+                                               Foreground="#B3FFFFFF"
+                                               Text="{x:Bind Record.DateRange}" />
+                                </StackPanel>
+
+                                <Grid Grid.Column="1"
+                                      Width="112"
+                                      Height="124"
+                                      VerticalAlignment="Center">
+                                    <Polygon Fill="#1AFFFFFF"
+                                             Points="56,0 112,28 112,96 56,124 0,96 0,28"
+                                             Stroke="#66E7C567"
+                                             StrokeThickness="1.5" />
+                                    <Image Width="72"
+                                           Height="72"
+                                           Source="{x:Bind Record.BadgeImage}"
+                                           Stretch="Uniform" />
+                                    <TextBlock Margin="0,0,0,6"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Bottom"
+                                               FontSize="10"
+                                               Foreground="#B3FFFFFF"
+                                               Text="{x:Bind Record.BadgeLevelText}" />
+                                </Grid>
+                            </Grid>
+
+                            <StackPanel Margin="22,0,0,18"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Bottom"
+                                        Orientation="Horizontal">
+                                <Border Padding="16,7" Background="#E63F79D8" CornerRadius="6,0,0,6">
+                                    <TextBlock FontSize="13"
+                                               Foreground="White"
+                                               Text="最高记录" />
+                                </Border>
+                                <Border Padding="16,2" Background="#B30A0D12" CornerRadius="0,6,6,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock FontSize="30"
+                                                   FontWeight="Bold"
+                                                   Foreground="{ThemeResource EndfieldGoldBrush}"
+                                                   Text="{x:Bind Record.HighestText}" />
+                                        <TextBlock Margin="0,0,0,7"
+                                                   VerticalAlignment="Bottom"
+                                                   FontSize="12"
+                                                   Foreground="#B3FFFFFF"
+                                                   Text="指标" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="Button_TabHistory"
+                                Click="Tab_Click"
+                                Content="历史记录"
+                                Style="{StaticResource EndfieldTabButtonSelectedStyle}"
+                                Tag="0" />
+                        <Button x:Name="Button_TabIndicators"
+                                Click="Tab_Click"
+                                Content="指标信息"
+                                Style="{StaticResource EndfieldTabButtonStyle}"
+                                Tag="1" />
+                        <Button x:Name="Button_TabOverview"
+                                Click="Tab_Click"
+                                Content="综合情况"
+                                Style="{StaticResource EndfieldTabButtonStyle}"
+                                Tag="2" />
+                    </StackPanel>
+
+                    <ItemsRepeater ItemTemplate="{StaticResource EndfieldStatTemplate}" ItemsSource="{x:Bind Record.Stats}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout ItemsStretch="Fill"
+                                               MinColumnSpacing="10"
+                                               MinItemWidth="230"
+                                               MinRowSpacing="10" />
+                        </ItemsRepeater.Layout>
+                    </ItemsRepeater>
+
+                    <StackPanel x:Name="Panel_History" Spacing="16">
+                        <StackPanel Spacing="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Style="{StaticResource EndfieldSectionCaptionStyle}" Text="//" />
+                                    <TextBlock FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Text="最佳纪录" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           Style="{StaticResource EndfieldMetaTextStyle}"
+                                           Text="本账号最高指标" />
+                            </Grid>
+                            <ContentControl HorizontalContentAlignment="Stretch"
+                                            Content="{x:Bind Record.BestRecord}"
+                                            ContentTemplate="{StaticResource CrisisRecordTemplate}" />
+                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="暂无最佳记录"
+                                       Visibility="{x:Bind Record.HasBestRecord, Converter={StaticResource EndfieldBoolToVisibilityReversed}}" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Style="{StaticResource EndfieldSectionCaptionStyle}" Text="//" />
+                                <TextBlock FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Text="历史纪录" />
+                            </StackPanel>
+                            <ItemsControl ItemTemplate="{StaticResource CrisisRecordTemplate}" ItemsSource="{x:Bind Record.Records}" />
+                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="暂无历史记录"
+                                       Visibility="{x:Bind Record.HasRecords, Converter={StaticResource EndfieldBoolToVisibilityReversed}}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel x:Name="Panel_Indicators" Spacing="10" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Style="{StaticResource EndfieldSectionCaptionStyle}" Text="//" />
+                            <TextBlock FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Text="合约指标" />
+                        </StackPanel>
+                        <ItemsRepeater ItemsSource="{x:Bind Record.Indicators}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout ItemsStretch="Fill"
+                                               MinColumnSpacing="10"
+                                               MinItemWidth="420"
+                                               MinRowSpacing="10" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="local:CrisisContractIndicatorView">
+                                    <Border Margin="0,0,10,10" Style="{StaticResource EndfieldCardStyle}" Padding="14">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="44"
+                                                    Height="44"
+                                                    VerticalAlignment="Top"
+                                                    Background="{ThemeResource EndfieldGoldSoftBrush}"
+                                                    CornerRadius="8">
+                                                <Image Source="{x:Bind Icon}" Stretch="Uniform" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="4">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock FontWeight="SemiBold"
+                                                               Text="{x:Bind Name}"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="1"
+                                                               FontSize="12"
+                                                               Foreground="{ThemeResource EndfieldGoldBrush}"
+                                                               Text="{x:Bind ScoreText}" />
+                                                </Grid>
+                                                <TextBlock FontSize="11"
+                                                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                           Text="{x:Bind TypeText}" />
+                                                <TextBlock FontSize="12"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                           MaxLines="2"
+                                                           Text="{x:Bind Description}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="当前赛季暂无合约指标。"
+                                   Visibility="{x:Bind Record.HasIndicators, Converter={StaticResource EndfieldBoolToVisibilityReversed}}" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="Panel_Overview" Spacing="12" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Style="{StaticResource EndfieldSectionCaptionStyle}" Text="//" />
+                            <TextBlock FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Text="赛季概览" />
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource EndfieldCardStyle}">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Style="{StaticResource EndfieldMetaTextStyle}" Text="活动奖章" />
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <Grid Width="56" Height="62">
+                                            <Polygon Fill="#1AFFFFFF"
+                                                     Points="28,0 56,14 56,48 28,62 0,48 0,14"
+                                                     Stroke="#66E7C567"
+                                                     StrokeThickness="1.2" />
+                                            <Image Width="36"
+                                                   Height="36"
+                                                   Source="{x:Bind Record.AchievementIcon}"
+                                                   Stretch="Uniform" />
+                                        </Grid>
+                                        <StackPanel VerticalAlignment="Center" Spacing="4">
+                                            <TextBlock FontSize="16"
+                                                       FontWeight="SemiBold"
+                                                       Text="{x:Bind Record.AchievementName}" />
+                                            <TextBlock Style="{StaticResource EndfieldMetaTextStyle}" Text="{x:Bind Record.AchievementDescription}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="1" Style="{StaticResource EndfieldCardStyle}">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Style="{StaticResource EndfieldMetaTextStyle}" Text="任务进度" />
+                                    <StackPanel Spacing="8">
+                                        <TextBlock FontSize="13" Text="周期任务" />
+                                        <ProgressBar Height="4" Maximum="100" Foreground="{ThemeResource EndfieldGoldBrush}" Value="{x:Bind Record.WeeklyProgress}" />
+                                        <TextBlock FontSize="13" Text="指标任务" />
+                                        <ProgressBar Height="4" Maximum="100" Foreground="{ThemeResource EndfieldGoldBrush}" Value="{x:Bind Record.IndicatorProgress}" />
+                                        <TextBlock FontSize="13" Text="阶段任务" />
+                                        <ProgressBar Height="4" Maximum="100" Foreground="{ThemeResource EndfieldGoldBrush}" Value="{x:Bind Record.StageProgress}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Style="{StaticResource EndfieldSectionCaptionStyle}" Text="//" />
+                            <TextBlock FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Text="行动规则" />
+                        </StackPanel>
+                        <Border Style="{StaticResource EndfieldCardStyle}">
+                            <TextBlock FontSize="13"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="{x:Bind Record.DungeonDescription}"
+                                       TextWrapping="Wrap" />
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Style="{StaticResource EndfieldSectionCaptionStyle}" Text="//" />
+                            <TextBlock FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Text="敌人情报" />
+                        </StackPanel>
+                        <ItemsRepeater ItemsSource="{x:Bind Record.Enemies}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout ItemsStretch="Fill"
+                                               MinColumnSpacing="10"
+                                               MinItemWidth="460"
+                                               MinRowSpacing="10" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="local:EndfieldEnemyView">
+                                    <Border Margin="0,0,10,10" Style="{StaticResource EndfieldCardStyle}" Padding="14">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="48"
+                                                    Height="48"
+                                                    Background="{ThemeResource EndfieldGoldSoftBrush}"
+                                                    CornerRadius="8">
+                                                <Image Source="{x:Bind ImageUrl}" Stretch="Uniform" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="3">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock FontWeight="SemiBold" Text="{x:Bind Name}" />
+                                                    <TextBlock FontSize="12"
+                                                               Foreground="{ThemeResource EndfieldGoldBrush}"
+                                                               Text="{x:Bind LevelText}" />
+                                                </StackPanel>
+                                                <TextBlock FontSize="12"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                           MaxLines="3"
+                                                           Text="{x:Bind Description}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="当前行动暂无敌人情报。"
+                                   Visibility="{x:Bind Record.HasEnemies, Converter={StaticResource EndfieldBoolToVisibilityReversed}}" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</sf:PageBase>

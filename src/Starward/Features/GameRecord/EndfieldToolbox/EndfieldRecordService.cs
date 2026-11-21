@@ -58,8 +58,28 @@ internal sealed class EndfieldRecordService
     }
 
 
+    public async Task<JsonDocument> GetCardDetailAsync(EndfieldGachaAccount account, CancellationToken cancellationToken = default)
+    {
+        return await GetRecordAsync(account, "detail", cancellationToken, "https://zonai.skland.com/api/v1/game/endfield");
+    }
+
+
+    public async Task<JsonDocument> GetCharacterDetailAsync(EndfieldGachaAccount account, string charId, string parameterName,
+        CancellationToken cancellationToken = default)
+    {
+        return await GetRecordAsync(account, $"char?{parameterName}={Uri.EscapeDataString(charId)}", cancellationToken);
+    }
+
+
+    public async Task<JsonDocument> GetCrisisContractRecordAsync(EndfieldGachaAccount account, string recordId,
+        string parameterName, CancellationToken cancellationToken = default)
+    {
+        return await GetRecordAsync(account, $"crisis-contract/record?{parameterName}={Uri.EscapeDataString(recordId)}", cancellationToken);
+    }
+
+
     private async Task<JsonDocument> GetRecordAsync(EndfieldGachaAccount account, string endpoint,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, string? apiRoot = null)
     {
         string loginToken = _gachaService.GetSavedLoginToken(account.AccountKey);
         if (string.IsNullOrWhiteSpace(loginToken))
@@ -67,8 +87,8 @@ internal sealed class EndfieldRecordService
             throw new InvalidOperationException("终末地账号登录已失效，请重新登录。");
         }
         SklandCredential credential = await GetCredentialAsync(loginToken, cancellationToken);
-        string url = $"{SklandApi}/card/{endpoint}" +
-                     $"?roleId={Uri.EscapeDataString(account.RoleId)}" +
+        string separator = endpoint.Contains('?') ? "&" : "?";
+        string url = $"{apiRoot ?? SklandApi}/card/{endpoint}{separator}roleId={Uri.EscapeDataString(account.RoleId)}" +
                      $"&serverId={Uri.EscapeDataString(account.ServerId)}" +
                      $"&userId={Uri.EscapeDataString(credential.UserId)}";
         JsonDocument document = await GetSignedAsync(url, credential,

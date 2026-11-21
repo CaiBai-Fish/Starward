@@ -11,6 +11,7 @@ using Starward.Core.GameRecord.StarRail.DailyNote;
 using Starward.Core.GameRecord.ZZZ.DailyNote;
 using Starward.Core.HoYoPlay;
 using Starward.Features.Gacha.Endfield;
+using Starward.Features.GameRecord.EndfieldToolbox;
 using System;
 using System.Threading.Tasks;
 
@@ -25,6 +26,8 @@ public sealed partial class DailyNoteButton : UserControl
 
 
     private readonly GameRecordService _gameRecordService = AppConfig.GetService<GameRecordService>();
+
+    private readonly EndfieldRecordService _endfieldRecordService = AppConfig.GetService<EndfieldRecordService>();
 
     private readonly EndfieldGachaService _endfieldGachaService = AppConfig.GetService<EndfieldGachaService>();
 
@@ -51,6 +54,10 @@ public sealed partial class DailyNoteButton : UserControl
                 OnPropertyChanged(nameof(IsZZZEnabled));
                 OnPropertyChanged(nameof(IsEndfieldEnabled));
                 OnPropertyChanged(nameof(IsArknightsEnabled));
+                if (value is not null && this.IsLoaded)
+                {
+                    RefreshDailyNoteCommand.Execute(false);
+                }
             }
         }
     }
@@ -144,7 +151,17 @@ public sealed partial class DailyNoteButton : UserControl
                 }
                 this.Visibility = Visibility.Visible;
                 ErrorMessage = null;
-                EndfieldDailyNote = await _endfieldGachaService.GetDailyNoteAsync(endfieldAccount, forceUpdate.Value);
+                EndfieldDailyNote getNote = await _endfieldGachaService.GetDailyNoteAsync(endfieldAccount, forceUpdate.Value);
+                try
+                {
+                    using System.Text.Json.JsonDocument creditDocument = await _endfieldRecordService.GetCardDetailAsync(endfieldAccount);
+                    EndfieldRecordParser.ApplyCredit(getNote, creditDocument.RootElement);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Endfield credit failed: {ex.Message}");
+                }
+                EndfieldDailyNote = getNote;
                 return;
             }
             if (gameBiz.Game is GameBiz.arknights)

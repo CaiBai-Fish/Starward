@@ -6,6 +6,7 @@ using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Features.Gacha.Endfield;
 using Starward.Features.GameRecord.DailyNote;
+using Starward.Features.GameRecord.EndfieldToolbox;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -78,9 +79,8 @@ public sealed partial class ArknightsRecordPage : Page
             NavigationViewItem_EndfieldCrisis.Visibility = Visibility.Collapsed;
             NavigationViewItem_EndfieldWar.Visibility = Visibility.Collapsed;
             NavigationViewItem_EndfieldMonument.Visibility = Visibility.Collapsed;
-            Frame_EndfieldAccount.Visibility = Visibility.Collapsed;
+            Frame_EndfieldContent.Visibility = Visibility.Collapsed;
             ScrollViewer_Records.Visibility = Visibility.Visible;
-            Border_EndfieldGuide.Visibility = Visibility.Collapsed;
             Items_Records.ItemsSource = null;
             Button_LoginArknights.Visibility = Visibility.Collapsed;
             Button_AccountList.Visibility = Visibility.Collapsed;
@@ -160,9 +160,8 @@ public sealed partial class ArknightsRecordPage : Page
 
     private void ShowSection(string key)
     {
-        Frame_EndfieldAccount.Visibility = Visibility.Collapsed;
+        Frame_EndfieldContent.Visibility = Visibility.Collapsed;
         ScrollViewer_Records.Visibility = Visibility.Visible;
-        Border_EndfieldGuide.Visibility = Visibility.Collapsed;
         Items_Records.ItemsSource = _sections.TryGetValue(key, out List<ArknightsRecordItemView>? list) ? list : [];
     }
 
@@ -185,45 +184,39 @@ public sealed partial class ArknightsRecordPage : Page
         }
         if (key is "endfield_crisis" or "endfield_war" or "endfield_monument")
         {
-            ShowEndfieldGuide(key);
+            ShowEndfieldRecord(key);
             return;
         }
         ShowSection(key);
     }
 
 
-    private void ShowEndfieldGuide(string key)
+    private void ShowEndfieldRecord(string key)
     {
-        (string title, string text) = key switch
+        ScrollViewer_Records.Visibility = Visibility.Collapsed;
+        Frame_EndfieldContent.Visibility = Visibility.Visible;
+        Type pageType = key switch
         {
-            "endfield_war" => ("战争回响", "战争回响的关卡进度与评分由森空岛终末地战绩页提供，客户端暂未接入本地解析。"),
-            "endfield_monument" => ("影拓丰碑", "影拓丰碑的通关记录与收藏进度需在森空岛终末地战绩页查看。"),
-            _ => ("危机合约", "危机合约的赛季记录、通关等级与奖励进度需在森空岛终末地战绩页查看。"),
+            "endfield_war" => typeof(WarEchoPage),
+            "endfield_monument" => typeof(UmbralMonumentPage),
+            _ => typeof(CrisisContractPage),
         };
-        Frame_EndfieldAccount.Visibility = Visibility.Collapsed;
-        ScrollViewer_Records.Visibility = Visibility.Visible;
-        Items_Records.ItemsSource = null;
-        TextBlock_EndfieldGuideTitle.Text = title;
-        TextBlock_EndfieldGuideText.Text = text;
-        Border_EndfieldGuide.Visibility = Visibility.Visible;
-    }
-
-
-    private void Button_EndfieldGuideOpen_Click(object sender, RoutedEventArgs e)
-    {
-        ArknightsGameDataWindow.ShowWindow("endfield");
+        if (Frame_EndfieldContent.SourcePageType != pageType)
+        {
+            Frame_EndfieldContent.Navigate(pageType);
+        }
     }
 
 
     private void ShowEndfieldAccount()
     {
         ScrollViewer_Records.Visibility = Visibility.Collapsed;
-        Frame_EndfieldAccount.Visibility = Visibility.Visible;
-        if (Frame_EndfieldAccount.Content is not EndfieldAccountRecordPage)
+        Frame_EndfieldContent.Visibility = Visibility.Visible;
+        if (Frame_EndfieldContent.Content is not EndfieldAccountRecordPage)
         {
-            Frame_EndfieldAccount.Navigate(typeof(EndfieldAccountRecordPage));
+            Frame_EndfieldContent.Navigate(typeof(EndfieldAccountRecordPage));
         }
-        if (Frame_EndfieldAccount.Content is EndfieldAccountRecordPage page)
+        if (Frame_EndfieldContent.Content is EndfieldAccountRecordPage page)
         {
             page.SetEmbedded(true);
         }
@@ -234,9 +227,20 @@ public sealed partial class ArknightsRecordPage : Page
     {
         if (CurrentGameId?.GameBiz.Game is GameBiz.endfield)
         {
-            if (Frame_EndfieldAccount.Content is EndfieldAccountRecordPage page)
+            switch (Frame_EndfieldContent.Content)
             {
-                await page.RefreshAsync();
+                case EndfieldAccountRecordPage page:
+                    await page.RefreshAsync();
+                    break;
+                case CrisisContractPage crisis:
+                    await crisis.RefreshAsync();
+                    break;
+                case WarEchoPage war:
+                    await war.RefreshAsync();
+                    break;
+                case UmbralMonumentPage monument:
+                    await monument.RefreshAsync();
+                    break;
             }
             return;
         }

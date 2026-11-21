@@ -86,6 +86,51 @@ internal sealed partial class EndfieldGachaService
             "SELECT COUNT(*) FROM EndfieldGachaAuth WHERE AccountKey = @accountKey;", new { accountKey }) > 0;
     }
 
+    public async Task<List<EndfieldGachaAccount>> AddAccountsFromCookieAsync(string cookie,
+        IProgress<string>? progress = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(cookie))
+        {
+            throw new ArgumentException("Cookie 不能为空。", nameof(cookie));
+        }
+        string token = ExtractLoginToken(cookie);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new InvalidOperationException("Cookie 中未找到 loginToken，请确认已登录森空岛网页版并复制完整 Cookie。");
+        }
+        return await AddAccountsFromLoginTokenAsync(token, progress, cancellationToken);
+    }
+
+
+    private static string ExtractLoginToken(string cookie)
+    {
+        foreach (string segment in cookie.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int index = segment.IndexOf('=');
+            if (index <= 0)
+            {
+                continue;
+            }
+            string key = segment[..index].Trim();
+            string value = segment[(index + 1)..].Trim();
+            if (value.Length == 0)
+            {
+                continue;
+            }
+            if (key.Equals("loginToken", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("login_token", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("token", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("accessToken", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("access_token", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("hg_token", StringComparison.OrdinalIgnoreCase))
+            {
+                return Uri.UnescapeDataString(value);
+            }
+        }
+        return "";
+    }
+
+
     public async Task<List<EndfieldGachaAccount>> AddAccountsFromLoginTokenAsync(string loginToken,
         IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {

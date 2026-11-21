@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="EndfieldCardBrush" Color="#A8141820" />
+            <SolidColorBrush x:Key="EndfieldCardStrongBrush" Color="#E610141B" />
+            <SolidColorBrush x:Key="EndfieldStrokeBrush" Color="#22FFFFFF" />
+            <SolidColorBrush x:Key="EndfieldGoldBrush" Color="#FFE7C567" />
+            <SolidColorBrush x:Key="EndfieldGoldSoftBrush" Color="#24E7C567" />
+            <SolidColorBrush x:Key="EndfieldRedBrush" Color="#FFE2574C" />
+            <SolidColorBrush x:Key="EndfieldBlueBrush" Color="#FF3F79D8" />
+            <SolidColorBrush x:Key="EndfieldTextOnAccentBrush" Color="#FF171208" />
+            <SolidColorBrush x:Key="EndfieldAvatarPlaceholderBrush" Color="#1FFFFFFF" />
+            <SolidColorBrush x:Key="EndfieldEmptySlotBrush" Color="#12FFFFFF" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="EndfieldCardBrush" Color="#F7FFFFFF" />
+            <SolidColorBrush x:Key="EndfieldCardStrongBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="EndfieldStrokeBrush" Color="#1F000000" />
+            <SolidColorBrush x:Key="EndfieldGoldBrush" Color="#FF9C7716" />
+            <SolidColorBrush x:Key="EndfieldGoldSoftBrush" Color="#269C7716" />
+            <SolidColorBrush x:Key="EndfieldRedBrush" Color="#FFC0392B" />
+            <SolidColorBrush x:Key="EndfieldBlueBrush" Color="#FF2E62B6" />
+            <SolidColorBrush x:Key="EndfieldTextOnAccentBrush" Color="#FF1A1408" />
+            <SolidColorBrush x:Key="EndfieldAvatarPlaceholderBrush" Color="#12000000" />
+            <SolidColorBrush x:Key="EndfieldEmptySlotBrush" Color="#0F000000" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

@@ -291,34 +291,10 @@
                         <TextBlock x:Name="TextBlock_Error"
                                    Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                    TextWrapping="Wrap" />
-                        <Border x:Name="Border_EndfieldGuide"
-                                Padding="20"
-                                Background="{ThemeResource CustomOverlayAcrylicBrush}"
-                                CornerRadius="8"
-                                Shadow="{ThemeResource ThemeShadow}"
-                                Translation="0,0,16"
-                                Visibility="Collapsed">
-                            <StackPanel Spacing="12">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <FontIcon FontSize="18" Glyph="&#xE946;" />
-                                    <TextBlock x:Name="TextBlock_EndfieldGuideTitle"
-                                               VerticalAlignment="Center"
-                                               FontSize="16"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
-                                <TextBlock x:Name="TextBlock_EndfieldGuideText"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           TextWrapping="Wrap" />
-                                <Button x:Name="Button_EndfieldGuideOpen"
-                                        Click="Button_EndfieldGuideOpen_Click"
-                                        Content="在森空岛查看"
-                                        Style="{ThemeResource AccentButtonStyle}" />
-                            </StackPanel>
-                        </Border>
                         <ItemsControl x:Name="Items_Records" ItemTemplate="{StaticResource RecordItemTemplate}" />
                     </StackPanel>
                 </ScrollViewer>
-                <Frame x:Name="Frame_EndfieldAccount" Visibility="Collapsed" />
+                <Frame x:Name="Frame_EndfieldContent" Visibility="Collapsed" />
             </Grid>
         </NavigationView>
     </Grid>

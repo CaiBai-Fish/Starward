@@ -36,6 +36,12 @@ public sealed class EndfieldDailyNote
 
     public int WeeklyTaskMax { get; set; }
 
+    public int Credit { get; set; }
+
+    public int CreditMax { get; set; }
+
+    public bool HasCredit => CreditMax > 0;
+
     /// <summary>
     /// 距离理智回满的剩余时间。
     /// </summary>

@@ -51,24 +51,13 @@
                                    TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
-                    <Button x:Name="Button_Login"
-                            Grid.Column="1"
-                            Grid.ColumnSpan="2"
-                            Margin="0,0,12,0"
-                            BorderThickness="0"
-                            Click="Button_Login_Click"
-                            Content="登录"
-                            Style="{ThemeResource AccentButtonStyle}"
-                            Visibility="Collapsed" />
-
                     <Button x:Name="Button_Accounts"
                             Grid.Column="2"
                             Width="28"
                             Height="44"
                             Margin="0,0,12,0"
                             Padding="0"
-                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
-                            Visibility="Collapsed">
+                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
                         <StackPanel Spacing="-6">
                             <FontIcon FontSize="16"
                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -97,9 +86,34 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition />
                                         <ColumnDefinition />
+                                        <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
 
                                     <Button Grid.Column="0"
+                                            Margin="4,0,4,0"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Click="Button_WebLogin_Click"
+                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <FontIcon FontSize="16" Glyph="&#xE774;" />
+                                            <TextBlock VerticalAlignment="Center" Text="WebView 登录" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Grid.Column="1"
+                                            Margin="4,0,4,0"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Click="Button_CookieLogin_Click"
+                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <FontIcon FontSize="16" Glyph="&#xE70F;" />
+                                            <TextBlock VerticalAlignment="Center" Text="Cookies 登录" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Grid.Column="2"
                                             Margin="4,0,4,0"
                                             HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Left"
@@ -111,23 +125,11 @@
                                         </StackPanel>
                                     </Button>
 
-                                    <Button Grid.Column="1"
-                                            Margin="4,0,4,0"
-                                            HorizontalAlignment="Stretch"
-                                            HorizontalContentAlignment="Left"
-                                            Click="Button_Login_Click"
-                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
-                                        <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <FontIcon FontSize="16" Glyph="&#xE710;" />
-                                            <TextBlock VerticalAlignment="Center" Text="登录" />
-                                        </StackPanel>
-                                    </Button>
-
-                                    <MenuFlyoutSeparator Grid.Row="1" Grid.ColumnSpan="2" />
+                                    <MenuFlyoutSeparator Grid.Row="1" Grid.ColumnSpan="3" />
 
                                     <ListView Name="ListView_Accounts"
                                               Grid.Row="2"
-                                              Grid.ColumnSpan="2"
+                                              Grid.ColumnSpan="3"
                                               ItemsSource="{x:Bind Accounts}"
                                               SelectionChanged="ListView_Accounts_SelectionChanged"
                                               SelectionMode="Single">
@@ -272,89 +274,6 @@
             <Grid>
                 <Frame Name="Frame_Content" />
 
-                <ScrollViewer Name="Panel_Records"
-                              Visibility="Collapsed">
-                    <StackPanel Padding="24,16,24,24" Spacing="8">
-                        <ItemsControl ItemsSource="{x:Bind NativeRecords}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="local:EndfieldRecordCard">
-                                    <Border Margin="0,0,0,8"
-                                            Padding="12"
-                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                            CornerRadius="8">
-                                        <StackPanel Spacing="8">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Spacing="2">
-                                                    <TextBlock Text="{x:Bind Title}" TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock FontSize="12"
-                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                               Text="{x:Bind Subtitle}"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                </StackPanel>
-                                                <TextBlock Grid.Column="1"
-                                                           VerticalAlignment="Center"
-                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                           Text="{x:Bind Value}" />
-                                            </Grid>
-                                            <ItemsControl ItemsSource="{x:Bind Team}"
-                                                          Visibility="{x:Bind HasTeam, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <StackPanel Orientation="Horizontal" Spacing="8" />
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="local:EndfieldTeamMember">
-                                                        <StackPanel Width="44" Spacing="2">
-                                                            <Border Width="32"
-                                                                    Height="32"
-                                                                    HorizontalAlignment="Center"
-                                                                    CornerRadius="8">
-                                                                <Image Source="{x:Bind AvatarUrl}" Stretch="UniformToFill" />
-                                                            </Border>
-                                                            <TextBlock HorizontalAlignment="Center"
-                                                                       FontSize="10"
-                                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                                       Text="{x:Bind LevelText}" />
-                                                        </StackPanel>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ScrollViewer>
-
-                <Border Name="Panel_Guide"
-                        Margin="24,20,24,24"
-                        Padding="20"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Top"
-                        Background="{ThemeResource CustomOverlayAcrylicBrush}"
-                        CornerRadius="8"
-                        Shadow="{ThemeResource ThemeShadow}"
-                        Translation="0,0,16"
-                        Visibility="Collapsed">
-                    <StackPanel Spacing="12">
-                        <TextBlock Name="TextBlock_GuideTitle"
-                                   FontSize="20"
-                                   FontWeight="SemiBold" />
-                        <TextBlock Name="TextBlock_GuideDescription"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   TextWrapping="Wrap" />
-                        <Button Name="Button_OpenGuide"
-                                Click="Button_OpenGuide_Click"
-                                Content="在森空岛查看"
-                                Style="{ThemeResource AccentButtonStyle}" />
-                    </StackPanel>
-                </Border>
             </Grid>
         </NavigationView>
     </Grid>

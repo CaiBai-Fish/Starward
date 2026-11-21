@@ -821,6 +821,22 @@
                                 </TextBlock>
                             </Grid>
 
+                            <Grid ColumnSpacing="8" Visibility="{x:Bind EndfieldDailyNote.HasCredit, Mode=OneTime, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Image Width="16" Height="16">
+                                        <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/Image/Endfield/icon_credit.svg" /></Image.Source>
+                                    </Image>
+                                    <TextBlock VerticalAlignment="Center" Text="信用" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                                    <Run Text="{x:Bind EndfieldDailyNote.Credit}" /><Run Text=" / " /><Run Text="{x:Bind EndfieldDailyNote.CreditMax}" />
+                                </TextBlock>
+                            </Grid>
+
                             <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
