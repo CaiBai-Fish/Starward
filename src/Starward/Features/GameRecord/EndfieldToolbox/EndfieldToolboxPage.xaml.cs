@@ -15,11 +15,21 @@ using Windows.ApplicationModel.DataTransfer;
 
 namespace Starward.Features.GameRecord.EndfieldToolbox;
 
+public sealed class EndfieldTeamMember
+{
+    public string Name { get; set; } = "";
+    public string AvatarUrl { get; set; } = "";
+    public string LevelText { get; set; } = "";
+}
+
+
 public sealed class EndfieldRecordCard
 {
     public string Title { get; set; } = "";
     public string Subtitle { get; set; } = "";
     public string Value { get; set; } = "";
+    public ObservableCollection<EndfieldTeamMember> Team { get; } = [];
+    public bool HasTeam => Team.Count > 0;
 }
 
 
@@ -246,6 +256,36 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
                 });
             }
         }
+        if (TryGet(warEchoes, "seasons", out JsonElement seasonDetails) && seasonDetails.ValueKind is JsonValueKind.Array)
+        {
+            foreach (JsonElement season in seasonDetails.EnumerateArray())
+            {
+                string seasonName = JsString(season, "name");
+                if (!TryGet(season, "weeks", out JsonElement weeks) || weeks.ValueKind is not JsonValueKind.Array)
+                {
+                    continue;
+                }
+                foreach (JsonElement week in weeks.EnumerateArray())
+                {
+                    string weekName = JsString(week, "name");
+                    if (!TryGet(week, "dungeonGroups", out JsonElement groups) || groups.ValueKind is not JsonValueKind.Array)
+                    {
+                        continue;
+                    }
+                    foreach (JsonElement group in groups.EnumerateArray())
+                    {
+                        string groupName = JsString(group, "name");
+                        foreach (string dungeonName in new[] { "normalDungeon", "hardDungeon", "cruelDungeon" })
+                        {
+                            if (TryGet(group, dungeonName, out JsonElement dungeon) && dungeon.ValueKind is JsonValueKind.Object)
+                            {
+                                AddDungeonCard(dungeon, $"{seasonName} · {weekName} · {groupName}");
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (TryGet(warEchoes, "achieves", out JsonElement achieves) && achieves.ValueKind is JsonValueKind.Array && achieves.GetArrayLength() > 0)
         {
             NativeRecords.Add(new EndfieldRecordCard
@@ -282,17 +322,26 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
                 bool isBest = TryGet(record, "isBest", out JsonElement best) && best.ValueKind is JsonValueKind.True;
                 bool passed = TryGet(record, "isPass", out JsonElement pass) && pass.ValueKind is JsonValueKind.True;
                 int passWave = JsInt(record, "passWave");
-                string time = JsString(record, "passTs");
+                string time = JsString(record, "ts");
                 if (string.IsNullOrWhiteSpace(time))
                 {
-                    time = JsString(record, "ts");
+                    time = JsString(record, "passTs");
                 }
-                NativeRecords.Add(new EndfieldRecordCard
+                EndfieldRecordCard recordCard = new()
                 {
                     Title = isBest ? "最佳记录" : "历史记录",
                     Subtitle = $"{FormatTime(time)}{(passWave > 0 ? $" · 波次 {passWave}" : "")}",
                     Value = passed ? "已通关" : "",
-                });
+                };
+                AddTeam(record, recordCard);
+                if (recordCard.HasTeam)
+                {
+                    NativeRecords.Insert(0, recordCard);
+                }
+                else
+                {
+                    NativeRecords.Add(recordCard);
+                }
             }
         }
     }
@@ -324,7 +373,64 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
                 Subtitle = string.IsNullOrWhiteSpace(activity) ? "影拓丰碑" : activity,
                 Value = achieved ? "已达成" : "",
             });
+            foreach (string dungeonName in new[] { "normalDungeon", "hardDungeon" })
+            {
+                if (TryGet(group, dungeonName, out JsonElement dungeon) && dungeon.ValueKind is JsonValueKind.Object)
+                {
+                    AddDungeonCard(dungeon, $"{name}{(dungeonName == "hardDungeon" ? " · 高难" : "")}");
+                }
+            }
 
+        }
+    }
+
+
+    private void AddDungeonCard(JsonElement dungeon, string parentName)
+    {
+        bool passed = TryGet(dungeon, "isPass", out JsonElement pass) && pass.ValueKind is JsonValueKind.True;
+        string dungeonName = JsString(dungeon, "name");
+        EndfieldRecordCard card = new()
+        {
+            Title = string.IsNullOrWhiteSpace(dungeonName) ? parentName : dungeonName,
+            Subtitle = parentName,
+            Value = passed ? "已通关" : "未通关",
+        };
+        if (TryGet(dungeon, "bestRecord", out JsonElement bestRecord) && bestRecord.ValueKind is JsonValueKind.Object)
+        {
+            AddTeam(bestRecord, card);
+            string recordTime = JsString(bestRecord, "ts");
+            string duration = FormatDuration(JsString(bestRecord, "passTs"));
+            if (!string.IsNullOrWhiteSpace(recordTime) || !string.IsNullOrWhiteSpace(duration))
+            {
+                card.Subtitle = $"{parentName} · {FormatTime(recordTime)}{(string.IsNullOrWhiteSpace(duration) ? "" : $" · {duration}")}";
+            }
+        }
+        if (card.HasTeam)
+        {
+            NativeRecords.Insert(0, card);
+        }
+        else
+        {
+            NativeRecords.Add(card);
+        }
+    }
+
+
+    private static void AddTeam(JsonElement record, EndfieldRecordCard card)
+    {
+        if (!TryGet(record, "chars", out JsonElement chars) || chars.ValueKind is not JsonValueKind.Array)
+        {
+            return;
+        }
+        foreach (JsonElement character in chars.EnumerateArray())
+        {
+            int level = JsInt(character, "level");
+            card.Team.Add(new EndfieldTeamMember
+            {
+                Name = JsString(character, "charId"),
+                AvatarUrl = JsString(character, "avatarUrl"),
+                LevelText = level > 0 ? $"Lv.{level}" : "",
+            });
         }
     }
 
@@ -366,6 +472,19 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
             return number;
         }
         return int.TryParse(value.ToString(), out number) ? number : 0;
+    }
+
+
+    private static string FormatDuration(string value)
+    {
+        if (long.TryParse(value, out long seconds) && seconds > 0)
+        {
+            TimeSpan span = TimeSpan.FromSeconds(seconds);
+            return span.TotalHours >= 1
+                ? $"{(int)span.TotalHours}:{span.Minutes:00}:{span.Seconds:00}"
+                : $"{span.Minutes}:{span.Seconds:00}";
+        }
+        return "";
     }
 
 
