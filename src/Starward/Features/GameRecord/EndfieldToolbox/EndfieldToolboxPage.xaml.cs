@@ -6,8 +6,10 @@ using Starward.Features.Gacha.Endfield;
 using Starward.Features.GameRecord.ArknightsRecord;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace Starward.Features.GameRecord.EndfieldToolbox;
 
@@ -18,6 +20,13 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
     private EndfieldAccountRecordPage? _accountPage;
 
     private string _currentCategory = "account";
+
+    private bool _updatingAccounts;
+
+    private EndfieldGachaAccount? _selectedAccount;
+
+
+    public ObservableCollection<EndfieldGachaAccount> Accounts { get; } = [];
 
 
     public EndfieldToolboxPage()
@@ -41,7 +50,23 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
     private void LoadAccounts()
     {
         List<EndfieldGachaAccount> accounts = _gachaService.GetAccounts();
-        EndfieldGachaAccount? account = accounts.FirstOrDefault();
+        _updatingAccounts = true;
+        Accounts.Clear();
+        foreach (EndfieldGachaAccount account in accounts)
+        {
+            Accounts.Add(account);
+        }
+        _selectedAccount = accounts.FirstOrDefault();
+        ListView_Accounts.SelectedItem = _selectedAccount;
+        _updatingAccounts = false;
+        UpdateHeader(_selectedAccount);
+        Button_Login.Visibility = _selectedAccount is null ? Visibility.Visible : Visibility.Collapsed;
+        Button_Accounts.Visibility = _selectedAccount is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+
+    private void UpdateHeader(EndfieldGachaAccount? account)
+    {
         if (account is null)
         {
             TextBlock_RoleName.Text = "终末地";
@@ -54,8 +79,18 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
                 ? $"UID {account.Uid}"
                 : $"{account.ServerName} · UID {account.Uid}";
         }
-        Button_Login.Visibility = account is null ? Visibility.Visible : Visibility.Collapsed;
-        Button_Accounts.Visibility = account is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+
+    private void ListView_Accounts_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingAccounts || ListView_Accounts.SelectedItem is not EndfieldGachaAccount account)
+        {
+            return;
+        }
+        _selectedAccount = account;
+        UpdateHeader(account);
+        _accountPage?.SelectAccount(account.AccountKey);
     }
 
 
@@ -107,6 +142,10 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
         {
             _accountPage = page;
             page.SetEmbedded(true);
+            if (!string.IsNullOrWhiteSpace(_selectedAccount?.AccountKey))
+            {
+                page.SelectAccount(_selectedAccount.AccountKey);
+            }
         }
     }
 
@@ -138,6 +177,10 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
             LoadAccounts();
             if (Frame_Content.Visibility == Visibility.Visible && _accountPage is not null)
             {
+                if (!string.IsNullOrWhiteSpace(_selectedAccount?.AccountKey))
+                {
+                    _accountPage.SelectAccount(_selectedAccount.AccountKey);
+                }
                 await _accountPage.RefreshAsync();
             }
         }
@@ -151,6 +194,17 @@ public sealed partial class EndfieldToolboxPage : Starward.Frameworks.PageBase
     private void Button_OpenGuide_Click(object sender, RoutedEventArgs e)
     {
         ArknightsGameDataWindow.ShowWindow("endfield");
+    }
+
+
+    private void MenuFlyoutItem_CopyUid_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem { Tag: string uid } && !string.IsNullOrWhiteSpace(uid))
+        {
+            DataPackage package = new();
+            package.SetText(uid);
+            Clipboard.SetContent(package);
+        }
     }
 
 

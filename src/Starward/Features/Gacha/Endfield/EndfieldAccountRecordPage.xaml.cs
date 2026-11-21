@@ -105,6 +105,21 @@ public sealed partial class EndfieldAccountRecordPage : PageBase
     public void SetEmbedded(bool embedded)
     {
         Panel_Header.Visibility = embedded ? Visibility.Collapsed : Visibility.Visible;
+        Panel_Toolbar.Visibility = embedded ? Visibility.Collapsed : Visibility.Visible;
+        if (Grid_Root.RowDefinitions.Count > 0)
+        {
+            Grid_Root.RowDefinitions[0].Height = embedded ? new GridLength(0) : new GridLength(44);
+        }
+    }
+
+
+    public void SelectAccount(string accountKey)
+    {
+        EndfieldGachaAccount? account = Accounts.FirstOrDefault(x => x.AccountKey == accountKey);
+        if (account is not null)
+        {
+            SelectedAccount = account;
+        }
     }
 
 

@@ -17,7 +17,7 @@
         <sq:SelfQueryStatsNumberBrushConverter x:Key="SelfQueryStatsNumberBrushConverter" />
     </Page.Resources>
 
-    <Grid>
+    <Grid x:Name="Grid_Root">
         <Grid.RowDefinitions>
             <RowDefinition Height="44" />
             <RowDefinition Height="Auto" />
@@ -38,7 +38,8 @@
                        Text="账号记录" />
         </StackPanel>
 
-        <StackPanel Margin="0,0,16,0"
+        <StackPanel x:Name="Panel_Toolbar"
+                    Margin="0,0,16,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
