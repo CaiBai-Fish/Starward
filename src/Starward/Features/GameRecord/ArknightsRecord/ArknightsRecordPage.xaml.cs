@@ -42,6 +42,8 @@ public sealed partial class ArknightsRecordPage : Page
 
     public ObservableCollection<ArknightsAccount> Accounts { get; } = [];
 
+    private bool _updatingAccounts;
+
     public ArknightsRecordPage()
     {
         InitializeComponent();
@@ -132,15 +134,18 @@ public sealed partial class ArknightsRecordPage : Page
                 NavigationView_Records.SelectedItem = NavigationViewItem_Garrison;
             }
             ShowSection((NavigationView_Records.SelectedItem as NavigationViewItem)?.Tag as string ?? "garrison");
-            ArknightsAccount? account = _dailyNoteService.GetAccount();
+            List<ArknightsAccount> accounts = _dailyNoteService.GetAccounts(out string currentUid);
+            _updatingAccounts = true;
             Accounts.Clear();
-            if (account is not null)
+            foreach (ArknightsAccount account in accounts)
             {
                 Accounts.Add(account);
-                ListView_Accounts.SelectedItem = account;
             }
-            Button_LoginArknights.Visibility = account is null ? Visibility.Visible : Visibility.Collapsed;
-            Button_AccountList.Visibility = account is null ? Visibility.Collapsed : Visibility.Visible;
+            ArknightsAccount? selectedAccount = accounts.FirstOrDefault(x => x.Uid == currentUid) ?? accounts.FirstOrDefault();
+            ListView_Accounts.SelectedItem = selectedAccount;
+            _updatingAccounts = false;
+            Button_LoginArknights.Visibility = selectedAccount is null ? Visibility.Visible : Visibility.Collapsed;
+            Button_AccountList.Visibility = selectedAccount is null ? Visibility.Collapsed : Visibility.Visible;
         }
         catch (Exception ex)
         {
@@ -256,6 +261,17 @@ public sealed partial class ArknightsRecordPage : Page
         {
             TextBlock_Error.Text = ex.Message;
         }
+    }
+
+
+    private void ListView_Accounts_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingAccounts || ListView_Accounts.SelectedItem is not ArknightsAccount account)
+        {
+            return;
+        }
+        _dailyNoteService.SetCurrentAccount(account.Uid);
+        _ = LoadRecordAsync();
     }
 
 

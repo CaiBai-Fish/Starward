@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Starward.Features.Gacha.Endfield;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
@@ -111,32 +113,158 @@ public sealed class ArknightsDailyNoteService
 
     public ArknightsAccount? GetAccount()
     {
+        List<ArknightsAccount> accounts = GetAccounts(out string currentUid);
+        return accounts.FirstOrDefault(x => x.Uid == currentUid) ?? accounts.FirstOrDefault();
+    }
+
+
+    public List<ArknightsAccount> GetAccounts()
+    {
+        return GetAccounts(out _);
+    }
+
+
+    public List<ArknightsAccount> GetAccounts(out string currentUid)
+    {
+        currentUid = "";
+        List<ArknightsAccount> accounts = [];
         try
         {
-            string path = AccountFilePath;
-            if (!File.Exists(path))
+            StoredArknightsAccounts stored = ReadStoredAccounts();
+            currentUid = stored.CurrentUid;
+            foreach (StoredArknightsAccount item in stored.Accounts)
             {
-                return null;
+                if (string.IsNullOrWhiteSpace(item.Uid) || string.IsNullOrWhiteSpace(item.LoginToken))
+                {
+                    continue;
+                }
+                try
+                {
+                    string token = EndfieldTokenProtector.Unprotect(Convert.FromBase64String(item.LoginToken));
+                    accounts.Add(new ArknightsAccount
+                    {
+                        Uid = item.Uid,
+                        NickName = item.NickName,
+                        ServerName = item.ServerName,
+                        LoginToken = token,
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Decrypt saved Arknights account {Uid} failed.", item.Uid);
+                }
             }
-            StoredArknightsAccount? stored = JsonSerializer.Deserialize<StoredArknightsAccount>(File.ReadAllText(path));
-            if (stored is null || string.IsNullOrWhiteSpace(stored.LoginToken) || string.IsNullOrWhiteSpace(stored.Uid))
-            {
-                return null;
-            }
-            string token = EndfieldTokenProtector.Unprotect(Convert.FromBase64String(stored.LoginToken));
-            return new ArknightsAccount
-            {
-                Uid = stored.Uid,
-                NickName = stored.NickName,
-                ServerName = stored.ServerName,
-                LoginToken = token,
-            };
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Read saved Arknights account failed.");
+            _logger.LogWarning(ex, "Read saved Arknights accounts failed.");
+        }
+        return accounts;
+    }
+
+
+    public void SetCurrentAccount(string uid)
+    {
+        if (string.IsNullOrWhiteSpace(uid))
+        {
+            return;
+        }
+        StoredArknightsAccounts stored = ReadStoredAccounts();
+        if (stored.Accounts.Any(x => x.Uid == uid))
+        {
+            stored.CurrentUid = uid;
+            WriteStoredAccounts(stored);
+        }
+    }
+
+
+    public void RemoveAccount(string uid)
+    {
+        if (string.IsNullOrWhiteSpace(uid))
+        {
+            return;
+        }
+        StoredArknightsAccounts stored = ReadStoredAccounts();
+        int index = stored.Accounts.FindIndex(x => x.Uid == uid);
+        if (index >= 0)
+        {
+            stored.Accounts.RemoveAt(index);
+            if (stored.CurrentUid == uid)
+            {
+                stored.CurrentUid = stored.Accounts.FirstOrDefault()?.Uid ?? "";
+            }
+            WriteStoredAccounts(stored);
+        }
+    }
+
+
+    private StoredArknightsAccounts ReadStoredAccounts()
+    {
+        string path = AccountFilePath;
+        if (!File.Exists(path))
+        {
+            return new StoredArknightsAccounts();
+        }
+        string json = File.ReadAllText(path);
+        using JsonDocument document = JsonDocument.Parse(json);
+        JsonElement root = document.RootElement;
+        StoredArknightsAccounts stored = new();
+        if (root.ValueKind is JsonValueKind.Object
+            && root.TryGetProperty("Accounts", out JsonElement accounts)
+            && accounts.ValueKind is JsonValueKind.Array)
+        {
+            stored.CurrentUid = root.TryGetProperty("CurrentUid", out JsonElement current) ? current.GetString() ?? "" : "";
+            foreach (JsonElement element in accounts.EnumerateArray())
+            {
+                StoredArknightsAccount? account = ReadStoredAccount(element);
+                if (account is not null)
+                {
+                    stored.Accounts.Add(account);
+                }
+            }
+        }
+        else
+        {
+            StoredArknightsAccount? account = ReadStoredAccount(root);
+            if (account is not null)
+            {
+                stored.Accounts.Add(account);
+                stored.CurrentUid = account.Uid;
+            }
+        }
+        return stored;
+    }
+
+
+    private static StoredArknightsAccount? ReadStoredAccount(JsonElement element)
+    {
+        if (element.ValueKind is not JsonValueKind.Object)
+        {
             return null;
         }
+        string uid = element.TryGetProperty("Uid", out JsonElement uidElement) ? uidElement.GetString() ?? "" : "";
+        string token = element.TryGetProperty("LoginToken", out JsonElement tokenElement) ? tokenElement.GetString() ?? "" : "";
+        if (string.IsNullOrWhiteSpace(uid) || string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+        return new StoredArknightsAccount
+        {
+            Uid = uid,
+            NickName = element.TryGetProperty("NickName", out JsonElement nickname) ? nickname.GetString() ?? "" : "",
+            ServerName = element.TryGetProperty("ServerName", out JsonElement server) ? server.GetString() ?? "" : "",
+            LoginToken = token,
+        };
+    }
+
+
+    private void WriteStoredAccounts(StoredArknightsAccounts accounts)
+    {
+        string path = AccountFilePath;
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        string temp = path + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(accounts, JsonOptions), new UTF8Encoding(false));
+        File.Move(temp, path, overwrite: true);
     }
 
 
@@ -189,18 +317,27 @@ public sealed class ArknightsDailyNoteService
         {
             throw new InvalidOperationException("该鹰角账号未绑定明日方舟角色。");
         }
-        StoredArknightsAccount stored = new()
+        StoredArknightsAccounts stored = ReadStoredAccounts();
+        StoredArknightsAccount? existing = stored.Accounts.FirstOrDefault(x => x.Uid == account.Uid);
+        string protectedToken = Convert.ToBase64String(EndfieldTokenProtector.Protect(loginToken));
+        if (existing is null)
         {
-            Uid = account.Uid,
-            NickName = account.NickName,
-            ServerName = account.ServerName,
-            LoginToken = Convert.ToBase64String(EndfieldTokenProtector.Protect(loginToken)),
-        };
-        string path = AccountFilePath;
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        string temp = path + ".tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(stored, JsonOptions), new UTF8Encoding(false));
-        File.Move(temp, path, overwrite: true);
+            stored.Accounts.Add(new StoredArknightsAccount
+            {
+                Uid = account.Uid,
+                NickName = account.NickName,
+                ServerName = account.ServerName,
+                LoginToken = protectedToken,
+            });
+        }
+        else
+        {
+            existing.NickName = account.NickName;
+            existing.ServerName = account.ServerName;
+            existing.LoginToken = protectedToken;
+        }
+        stored.CurrentUid = account.Uid;
+        WriteStoredAccounts(stored);
         return account;
     }
 
@@ -364,6 +501,14 @@ public sealed class ArknightsDailyNoteService
         public string ServerName { get; set; } = "";
 
         public string LoginToken { get; set; } = "";
+    }
+
+
+    private sealed class StoredArknightsAccounts
+    {
+        public string CurrentUid { get; set; } = "";
+
+        public List<StoredArknightsAccount> Accounts { get; set; } = [];
     }
 
 }

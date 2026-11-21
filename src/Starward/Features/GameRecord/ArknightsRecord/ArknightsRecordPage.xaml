@@ -162,6 +162,7 @@
                                               Grid.Row="2"
                                               Grid.ColumnSpan="2"
                                               ItemsSource="{x:Bind Accounts}"
+                                              SelectionChanged="ListView_Accounts_SelectionChanged"
                                               SelectionMode="Single">
                                         <ListView.ItemTemplate>
                                             <DataTemplate x:DataType="dn:ArknightsAccount">
