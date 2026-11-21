@@ -13,6 +13,7 @@ using Starward.Features.GameLauncher;
 using Starward.Features.GamepadControl;
 using Starward.Features.GameRecord;
 using Starward.Features.GameRecord.ArknightsRecord;
+using Starward.Features.GameRecord.EndfieldToolbox;
 using Starward.Features.GameSetting;
 using Starward.Features.RPC;
 using Starward.Features.Screenshot;
@@ -143,7 +144,8 @@ public sealed partial class MainView : UserControl
         NavigationViewItem_HoyolabToolbox.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(GameRecordPage)).ToVisibility();
         NavigationViewItem_SelfQuery.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(SelfQueryPage)).ToVisibility();
         NavigationViewItem_GenshinBeyondGacha.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(GenshinBeyondGachaPage)).ToVisibility();
-        NavigationViewItem_ArknightsRecord.Visibility = CurrentGameFeatureConfig.SupportedPages.Contains(nameof(ArknightsRecordPage)).ToVisibility();
+        NavigationViewItem_ArknightsRecord.Visibility = (CurrentGameFeatureConfig.SupportedPages.Contains(nameof(ArknightsRecordPage)) ||
+                                                             CurrentGameFeatureConfig.SupportedPages.Contains(nameof(EndfieldToolboxPage))).ToVisibility();
 
         // 抽卡记录名称
         string gachalogText = CurrentGameId?.GameBiz.Game switch
@@ -207,7 +209,10 @@ public sealed partial class MainView : UserControl
                         nameof(GameRecordPage) => typeof(GameRecordPage),
                         nameof(SelfQueryPage) => typeof(SelfQueryPage),
                         nameof(GenshinBeyondGachaPage) => typeof(GenshinBeyondGachaPage),
-                        nameof(ArknightsRecordPage) => typeof(ArknightsRecordPage),
+                        nameof(ArknightsRecordPage) => CurrentGameId?.GameBiz.Game == GameBiz.endfield
+                            ? typeof(EndfieldToolboxPage)
+                            : typeof(ArknightsRecordPage),
+                        nameof(EndfieldToolboxPage) => typeof(EndfieldToolboxPage),
                         _ => null,
                     };
                     NavigateTo(type);

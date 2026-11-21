@@ -4,6 +4,7 @@ using Starward.Features.Gacha;
 using Starward.Features.Gacha.Endfield;
 using Starward.Features.GameLauncher;
 using Starward.Features.GameRecord.ArknightsRecord;
+using Starward.Features.GameRecord.EndfieldToolbox;
 using Starward.Features.GameRecord;
 using Starward.Features.GameSetting;
 using Starward.Features.Screenshot;
@@ -122,7 +123,7 @@ internal partial class GameFeatureConfig
             nameof(GameSettingPage),
             nameof(ScreenshotPage),
             nameof(EndfieldGachaPage),
-            nameof(ArknightsRecordPage),
+            nameof(EndfieldToolboxPage),
         ],
         SupportHardLink = true,
         SupportDailyNote = true,
@@ -138,7 +139,7 @@ internal partial class GameFeatureConfig
             nameof(GameLauncherPage),
             nameof(GameSettingPage),
             nameof(ScreenshotPage),
-            nameof(ArknightsRecordPage),
+            nameof(EndfieldToolboxPage),
         ],
         SupportHardLink = true,
     };

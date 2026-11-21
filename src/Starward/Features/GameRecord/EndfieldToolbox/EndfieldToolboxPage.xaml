@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<sf:PageBase x:Class="Starward.Features.GameRecord.EndfieldToolbox.EndfieldToolboxPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sf="using:Starward.Frameworks"
+             x:DefaultBindMode="OneWay"
+             mc:Ignorable="d">
+
+    <Grid>
+        <NavigationView Name="NavigationView_Toolbox"
+                        IsBackButtonVisible="Collapsed"
+                        IsPaneToggleButtonVisible="False"
+                        IsSettingsVisible="False"
+                        ItemInvoked="NavigationView_Toolbox_ItemInvoked"
+                        OpenPaneLength="248"
+                        PaneDisplayMode="Left">
+            <NavigationView.Resources>
+                <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
+            </NavigationView.Resources>
+
+            <NavigationView.PaneCustomContent>
+                <Grid Height="56"
+                      HorizontalAlignment="Stretch"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Width="56"
+                            Height="56"
+                            Margin="8,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            CornerRadius="100">
+                        <Image Source="ms-appx:///Assets/Image/icon_endfield.png" Stretch="UniformToFill" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                        <TextBlock x:Name="TextBlock_RoleName" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="TextBlock_RoleInfo"
+                                   FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <Button x:Name="Button_Login"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2"
+                            Margin="0,0,12,0"
+                            BorderThickness="0"
+                            Click="Button_Login_Click"
+                            Content="登录"
+                            Style="{ThemeResource AccentButtonStyle}"
+                            Visibility="Collapsed" />
+
+                    <Button x:Name="Button_Accounts"
+                            Grid.Column="2"
+                            Width="28"
+                            Height="44"
+                            Margin="0,0,12,0"
+                            Padding="0"
+                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}"
+                            Visibility="Collapsed">
+                        <StackPanel Spacing="-6">
+                            <FontIcon FontSize="16"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                      Glyph="&#xE70E;" />
+                            <FontIcon FontSize="16"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                      Glyph="&#xE70D;" />
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style BasedOn="{StaticResource DefaultFlyoutPresenterStyle}" TargetType="FlyoutPresenter">
+                                        <Setter Property="Background" Value="{ThemeResource CustomAcrylicBrush}" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Padding" Value="4" />
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <StackPanel MinWidth="240" Padding="4" Spacing="4">
+                                    <Button HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Click="Button_Refresh_Click"
+                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <FontIcon FontSize="16" Glyph="&#xE72C;" />
+                                            <TextBlock VerticalAlignment="Center" Text="刷新信息" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Click="Button_Login_Click"
+                                            Style="{ThemeResource DateTimePickerFlyoutButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <FontIcon FontSize="16" Glyph="&#xE710;" />
+                                            <TextBlock VerticalAlignment="Center" Text="登录鹰角账号" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </Grid>
+            </NavigationView.PaneCustomContent>
+
+            <NavigationView.MenuItems>
+                <NavigationViewItemSeparator />
+
+                <NavigationViewItem Tag="account" Content="账号记录">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8C7;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem Tag="crisis" Content="危机合约">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7BA;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem Tag="war" Content="战争回响">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7C3;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem Tag="monument" Content="影拓丰碑">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8A5;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.PaneFooter>
+                <NavigationViewItem Margin="-2,0,0,-4"
+                                    Content="更新设备指纹"
+                                    Tapped="NavigationViewItem_UpdateDeviceInfo_Tapped">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE928;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.PaneFooter>
+
+            <Grid>
+                <Frame Name="Frame_Content" />
+
+                <Border Name="Panel_Guide"
+                        Margin="24,20,24,24"
+                        Padding="20"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Background="{ThemeResource CustomOverlayAcrylicBrush}"
+                        CornerRadius="8"
+                        Shadow="{ThemeResource ThemeShadow}"
+                        Translation="0,0,16"
+                        Visibility="Collapsed">
+                    <StackPanel Spacing="12">
+                        <TextBlock Name="TextBlock_GuideTitle"
+                                   FontSize="20"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Name="TextBlock_GuideDescription"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                        <Button Name="Button_OpenGuide"
+                                Click="Button_OpenGuide_Click"
+                                Content="在森空岛查看"
+                                Style="{ThemeResource AccentButtonStyle}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </NavigationView>
+    </Grid>
+</sf:PageBase>
