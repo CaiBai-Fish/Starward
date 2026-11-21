@@ -20,6 +20,7 @@ using Starward.Features.GameAccount;
 using Starward.Features.GameInstall;
 using Starward.Features.GameLauncher;
 using Starward.Features.GameRecord;
+using Starward.Features.GameRecord.EndfieldToolbox;
 using Starward.Features.HoYoPlay;
 using Starward.Features.PlayTime;
 using Starward.Features.RPC;
@@ -82,6 +83,7 @@ public static partial class AppConfig
             sc.AddSingleton<EndfieldGachaService>();
         sc.AddSingleton<Starward.Features.GameRecord.DailyNote.ArknightsDailyNoteService>();
         sc.AddSingleton<Starward.Features.GameRecord.ArknightsRecord.ArknightsRecordService>();
+        sc.AddSingleton<EndfieldRecordService>();
 
             sc.AddSingleton<HoyolabClient>();
             sc.AddSingleton<HyperionClient>();

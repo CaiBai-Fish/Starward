@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ef="using:Starward.Features.Gacha.Endfield"
+             xmlns:local="using:Starward.Features.GameRecord.EndfieldToolbox"
              xmlns:sf="using:Starward.Frameworks"
              x:DefaultBindMode="OneWay"
              mc:Ignorable="d">
@@ -180,6 +181,19 @@
             <NavigationView.MenuItems>
                 <NavigationViewItemSeparator />
 
+                <NavigationViewItem Tag="h5">
+                    <NavigationViewItem.Content>
+                        <Grid Margin="-2,0,0,0" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Image Width="20" Height="20" Source="ms-appx:///Assets/Image/icon_skland_record.png" />
+                            <TextBlock Grid.Column="1" Text="战绩" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </NavigationViewItem.Content>
+                </NavigationViewItem>
+
                 <NavigationViewItem Tag="account">
                     <NavigationViewItem.Content>
                         <Grid Margin="-2,0,0,0" ColumnSpacing="12">
@@ -257,6 +271,40 @@
 
             <Grid>
                 <Frame Name="Frame_Content" />
+
+                <ScrollViewer Name="Panel_Records"
+                              Visibility="Collapsed">
+                    <StackPanel Padding="24,16,24,24" Spacing="8">
+                        <ItemsControl ItemsSource="{x:Bind NativeRecords}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:EndfieldRecordCard">
+                                    <Border Margin="0,0,0,8"
+                                            Padding="12"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            CornerRadius="8">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{x:Bind Title}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock FontSize="12"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                           Text="{x:Bind Subtitle}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       Text="{x:Bind Value}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <Border Name="Panel_Guide"
                         Margin="24,20,24,24"
