@@ -38,8 +38,9 @@
             <FlipView Name="FlipView_Banner"
                       Background="Transparent"
                       CornerRadius="8"
-                      ItemsSource="{x:Bind Banners}"
-                      Loaded="FlipView_Banner_Loaded">
+                      ItemsSource="{x:Bind BannerItems}"
+                      Loaded="FlipView_Banner_Loaded"
+                      SelectionChanged="FlipView_Banner_SelectionChanged">
                 <FlipView.ItemTemplate>
                     <DataTemplate x:DataType="sch:GameBanner">
                         <sc:CachedImage Name="Image_Banner"
@@ -61,7 +62,7 @@
                     CornerRadius="8,0,8,0"
                     Visibility="Collapsed">
                 <TextBlock FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                    <Run Text="{x:Bind local:GameBannerAndPost.AddOne(FlipView_Banner.SelectedIndex)}" /><Run Text="/" /><Run Text="{x:Bind Banners.Count}" />
+                    <Run Text="{x:Bind local:GameBannerAndPost.GetBannerIndexNumber(FlipView_Banner.SelectedIndex, Banners.Count)}" /><Run Text="/" /><Run Text="{x:Bind Banners.Count}" />
                 </TextBlock>
             </Border>
         </Grid>

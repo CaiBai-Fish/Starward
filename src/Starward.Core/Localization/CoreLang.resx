@@ -325,4 +325,7 @@
   <data name="Game_WutheringWaves" xml:space="preserve">
     <value>Wuthering Waves</value>
   </data>
+  <data name="Game_AzurPromilia" xml:space="preserve">
+    <value>Azur Promilia</value>
+  </data>
 </root>

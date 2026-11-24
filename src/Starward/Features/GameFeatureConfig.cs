@@ -83,6 +83,7 @@ internal partial class GameFeatureConfig
             GameBiz.arknights_global => arknights_global,
             GameBiz.endfield_cn => endfield_cn,
             GameBiz.endfield_global => endfield_global,
+            GameBiz.azurpromilia_cn => azurpromilia_cn,
             _ => Default,
         };
         return config;
@@ -142,6 +143,18 @@ internal partial class GameFeatureConfig
             nameof(EndfieldToolboxPage),
         ],
         SupportHardLink = true,
+    };
+
+
+    private static readonly GameFeatureConfig azurpromilia_cn = new()
+    {
+        SupportedPages =
+        [
+            nameof(GameLauncherPage),
+            nameof(GameSettingPage),
+            nameof(ScreenshotPage),
+        ],
+        SupportGameAccountSwitcher = true,
     };
 
 

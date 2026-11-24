@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using Starward.Core;
 using Starward.Core.Hypergryph;
+using Starward.Core.Manjuu;
 using Starward.Features.Database;
 using Starward.Features.Gacha.Endfield;
 using System;
@@ -97,11 +98,17 @@ public class GameAccountService
                     SHA256 = x.AccountKey,
                     GameBiz = biz,
                     Uid = long.TryParse(x.RoleId, out long uid) ? uid : 0,
+                    GameUid = x.Uid,
+                    RoleId = x.RoleId,
                     Name = x.RoleName ?? "",
                     Value = Encoding.UTF8.GetBytes(x.AccountKey),
                     Time = DateTime.Now,
                     IsSaved = true,
                 }).ToList();
+        }
+        if (ManjuuGameConstants.IsManjuuGame(biz))
+        {
+            return GetManjuuGameAccounts(biz);
         }
         var databaseAccounts = GetGameAccountsFromDatabase(biz).ToList();
         var regAccount = GetGameAccountFromRegistry(biz);
@@ -139,6 +146,40 @@ public class GameAccountService
 
 
 
+    /// <summary>
+    /// 蓝色星原：账号以客户端登录缓存（pcsdk.ini）的哈希标识，无法解析 UID。
+    /// </summary>
+    private List<GameAccount> GetManjuuGameAccounts(GameBiz biz)
+    {
+        List<GameAccount> list = GetGameAccountsFromDatabase(biz).ToList();
+        var cache = AppConfig.GetService<ManjuuAccountCacheService>();
+        string? hash = cache.GetCurrentCacheHash();
+        if (!string.IsNullOrWhiteSpace(hash))
+        {
+            GameAccount? current = list.FirstOrDefault(x => x.SHA256 == hash);
+            if (current is not null)
+            {
+                current.Time = DateTime.Now;
+                list.Remove(current);
+                list.Insert(0, current);
+            }
+            else
+            {
+                list.Insert(0, new GameAccount
+                {
+                    SHA256 = hash,
+                    GameBiz = biz,
+                    Value = Encoding.UTF8.GetBytes(hash),
+                    Name = "未保存账号",
+                    Time = DateTime.Now,
+                    IsSaved = false,
+                });
+            }
+        }
+        return list;
+    }
+
+
     public IEnumerable<int> GetSuggestionUids(GameBiz biz)
     {
         using var dapper = DatabaseService.CreateConnection();
@@ -152,6 +193,14 @@ public class GameAccountService
     {
         account.Name ??= "";
         account.IsSaved = true;
+        if (HypergryphGameConstants.IsHypergryphGame(account.GameBiz))
+        {
+            SaveEndfieldAccountCache(account);
+        }
+        if (ManjuuGameConstants.IsManjuuGame(account.GameBiz))
+        {
+            AppConfig.GetService<ManjuuAccountCacheService>().Save(account.SHA256);
+        }
         using var dapper = DatabaseService.CreateConnection();
         dapper.Execute("INSERT OR REPLACE INTO GameAccount (SHA256, GameBiz, Uid, Name, Value, Time) VALUES (@SHA256, @GameBiz, @Uid, @Name, @Value, @Time);", account);
         _logger.LogInformation("Save account {name} ({biz}) successfully!", account.Name, account.GameBiz);
@@ -163,16 +212,84 @@ public class GameAccountService
     {
         using var dapper = DatabaseService.CreateConnection();
         dapper.Execute("DELETE FROM GameAccount WHERE SHA256=@SHA256;", account);
+        if (HypergryphGameConstants.IsHypergryphGame(account.GameBiz))
+        {
+            AppConfig.GetService<EndfieldAccountCacheService>().Delete(GetEndfieldGameUid(account, fallbackToCurrent: false));
+        }
+        if (ManjuuGameConstants.IsManjuuGame(account.GameBiz))
+        {
+            AppConfig.GetService<ManjuuAccountCacheService>().Delete(account.SHA256);
+        }
         _logger.LogInformation("Delete account {name} ({biz}) successfully!", account.Name, account.GameBiz);
+    }
+
+
+    private static string GetEndfieldGameUid(GameAccount account, bool fallbackToCurrent)
+    {
+        if (!string.IsNullOrWhiteSpace(account.GameUid))
+        {
+            return account.GameUid;
+        }
+        return fallbackToCurrent ? AppConfig.GetService<EndfieldAccountCacheService>().GetCurrentGameUid() ?? "" : "";
+    }
+
+
+    private void SaveEndfieldAccountCache(GameAccount account)
+    {
+        try
+        {
+            var cache = AppConfig.GetService<EndfieldAccountCacheService>();
+            string gameUid = GetEndfieldGameUid(account, fallbackToCurrent: true);
+            if (string.IsNullOrWhiteSpace(gameUid))
+            {
+                _logger.LogWarning("Save Endfield account cache skipped: game uid is unknown.");
+                return;
+            }
+            string? currentUid = cache.GetCurrentGameUid();
+            if (!string.IsNullOrWhiteSpace(currentUid) && !string.Equals(currentUid, gameUid, StringComparison.Ordinal))
+            {
+                _logger.LogWarning("Save Endfield account cache skipped: current game uid {CurrentUid} does not match account uid {GameUid}.", currentUid, gameUid);
+                return;
+            }
+            cache.Save(gameUid, account.RoleId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Save Endfield account cache failed.");
+        }
+    }
+
+
+    private void RestoreEndfieldAccountCache(GameAccount account)
+    {
+        try
+        {
+            string gameUid = GetEndfieldGameUid(account, fallbackToCurrent: false);
+            if (string.IsNullOrWhiteSpace(gameUid))
+            {
+                return;
+            }
+            AppConfig.GetService<EndfieldAccountCacheService>().Restore(gameUid);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Restore Endfield account cache failed.");
+        }
     }
 
 
 
     public void ChangeGameAccount(GameAccount account)
     {
+        if (ManjuuGameConstants.IsManjuuGame(account.GameBiz))
+        {
+            AppConfig.GetService<ManjuuAccountCacheService>().Restore(account.SHA256);
+            return;
+        }
         if (HypergryphGameConstants.IsHypergryphGame(account.GameBiz))
         {
             AppConfig.EndfieldCurrentAccountKey = account.Value is { Length: > 0 } ? Encoding.UTF8.GetString(account.Value) : null;
+            RestoreEndfieldAccountCache(account);
             return;
         }
         string key = account.GameBiz.GetGameRegistryKey();

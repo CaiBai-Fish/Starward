@@ -61,6 +61,9 @@ public record struct GameBiz
     public const string arknights_cn = "arknights_cn";
     public const string arknights_global = "arknights_global";
 
+    public const string azurpromilia = "azurpromilia";
+    public const string azurpromilia_cn = "azurpromilia_cn";
+
     public const string kirara = "kirara";
     public const string kirara_cn = "kirara_cn";
     public const string kirara_global = "kirara_global";
@@ -97,6 +100,7 @@ public record struct GameBiz
         arknights_global,
         kirara_cn,
         kirara_global,
+        azurpromilia_cn,
     }.AsReadOnly();
 
 
@@ -127,6 +131,7 @@ public record struct GameBiz
         endfield_cn or endfield_global => true,
         arknights_cn or arknights_global => true,
         kirara_cn or kirara_global => true,
+        azurpromilia_cn => true,
         _ => false,
     };
 
@@ -153,6 +158,7 @@ public record struct GameBiz
         endfield => CoreLang.Game_ArknightsEndfield,
         arknights => CoreLang.Game_Arknights,
         kirara => CoreLang.Game_WutheringWaves,
+        azurpromilia => CoreLang.Game_AzurPromilia,
         _ => "",
     };
 
@@ -183,6 +189,7 @@ public record struct GameBiz
         nap_global => GameRegistry.GamePath_nap_global,
         kirara_cn => GameRegistry.GamePath_kirara_cn,
         kirara_global => GameRegistry.GamePath_kirara_global,
+        azurpromilia_cn => GameRegistry.GamePath_azurpromilia_cn,
         _ => "HKEY_CURRENT_USER",
     };
 

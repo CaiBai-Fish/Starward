@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Manjuu;
 using Starward.Features.Background;
 using Starward.Features.CloudGame;
 using Starward.Features.GameInstall;
@@ -97,7 +98,7 @@ public sealed partial class GameLauncherPage : PageBase
         {
             Button_CloudGame.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
         }
-        if (feature.SupportGameAccountSwitcher && (AppConfig.EnableGameAccountSwitcher || HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz)))
+        if (feature.SupportGameAccountSwitcher && (AppConfig.EnableGameAccountSwitcher || HypergryphGameConstants.IsHypergryphGame(CurrentGameBiz) || ManjuuGameConstants.IsManjuuGame(CurrentGameBiz)))
         {
             EnableGameAccountSwitcher = true;
         }

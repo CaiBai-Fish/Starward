@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Manjuu;
 using Starward.Features.GameLauncher;
+using Starward.Features.Manjuu;
 using Starward.Features.Hypergryph;
 using Starward.Features.ThirdParty;
 using System;
@@ -36,14 +38,17 @@ public class HoYoPlayService
 
     private readonly HypergryphLauncherClient _hypergryphLauncherClient;
 
+    private readonly ManjuuLauncherClient _manjuuLauncherClient;
 
-    public HoYoPlayService(ILogger<HoYoPlayService> logger, HoYoPlayClient client, HttpClient httpClient, IMemoryCache memoryCache, HypergryphLauncherClient hypergryphLauncherClient)
+
+    public HoYoPlayService(ILogger<HoYoPlayService> logger, HoYoPlayClient client, HttpClient httpClient, IMemoryCache memoryCache, HypergryphLauncherClient hypergryphLauncherClient, ManjuuLauncherClient manjuuLauncherClient)
     {
         _logger = logger;
         _client = client;
         _httpClient = httpClient;
         _memoryCache = memoryCache;
         _hypergryphLauncherClient = hypergryphLauncherClient;
+        _manjuuLauncherClient = manjuuLauncherClient;
     }
 
 
@@ -55,6 +60,10 @@ public class HoYoPlayService
         if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
         {
             return HypergryphGameMetadata.CreateGameInfo(gameId.GameBiz);
+        }
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
+        {
+            return ManjuuGameMetadata.CreateGameInfo(gameId.GameBiz);
         }
         if (ThirdPartyGameService.CreateGameInfo(gameId.GameBiz) is GameInfo thirdPartyGameInfo)
         {
@@ -123,6 +132,13 @@ public class HoYoPlayService
             if (!infos.Any(x => x.GameBiz == profile.GameBiz))
             {
                 infos.Add(HypergryphGameMetadata.CreateGameInfo(profile.GameBiz));
+            }
+        }
+        foreach (ManjuuGameProfile profile in ManjuuGameConstants.GameProfiles)
+        {
+            if (!infos.Any(x => x.GameBiz == profile.GameBiz))
+            {
+                infos.Add(ManjuuGameMetadata.CreateGameInfo(profile.GameBiz));
             }
         }
         foreach (GameInfo thirdPartyGameInfo in ThirdPartyGameService.CreateGameInfos())
@@ -219,6 +235,11 @@ public class HoYoPlayService
             HypergryphLauncherContent content = await GetHypergryphLauncherContentAsync(gameId.GameBiz, cancellationToken);
             return HypergryphGameMetadata.CreateBackgroundInfo(gameId.GameBiz, content);
         }
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
+        {
+            ManjuuLauncherContent content = await _manjuuLauncherClient.GetContentAsync(gameId.GameBiz, cancellationToken);
+            return ManjuuGameMetadata.CreateBackgroundInfo(gameId.GameBiz, content);
+        }
         if (ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz))
         {
             return new GameBackgroundInfo { GameId = gameId, Backgrounds = [] };
@@ -245,6 +266,11 @@ public class HoYoPlayService
             HypergryphLauncherContent launcherContent = await GetHypergryphLauncherContentAsync(gameId.GameBiz, cancellationToken);
             return HypergryphGameMetadata.CreateGameContent(gameId.GameBiz, launcherContent);
         }
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
+        {
+            ManjuuLauncherContent manjuuContent = await _manjuuLauncherClient.GetContentAsync(gameId.GameBiz, cancellationToken);
+            return ManjuuGameMetadata.CreateGameContent(gameId.GameBiz, manjuuContent);
+        }
         if (ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz))
         {
             return new GameContent
@@ -269,6 +295,12 @@ public class HoYoPlayService
 
     public async Task<GamePackage> GetGamePackageAsync(GameId gameId, CancellationToken cancellationToken = default)
     {
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
+        {
+            ManjuuGameVersion version = await _manjuuLauncherClient.GetLatestVersionAsync(gameId.GameBiz, cancellationToken);
+            ManjuuPackageConfig packageConfig = await _manjuuLauncherClient.GetPackageConfigAsync(gameId.GameBiz, null, cancellationToken);
+            return ManjuuGameMetadata.CreateGamePackage(gameId.GameBiz, version, packageConfig);
+        }
         if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
         {
             // 请求时带上本地版本号，官方才会返回增量更新包
@@ -281,8 +313,11 @@ public class HoYoPlayService
             HypergryphLatestGame latest = await _hypergryphLauncherClient.GetLatestGameAsync(gameId.GameBiz, localVersion, cancellationToken);
             if (latest.Package.Packs.Count == 0 && (latest.Patch?.DownloadParts.Count ?? 0) == 0)
             {
-                // 本地版本已是最新时官方不返回完整包，用空版本重新请求以显示完整包
+                // 本地版本已是最新时官方不返回完整包，用空版本重新请求以显示完整包。
+                // 空版本请求不会返回 pre_patch，需要保留第一次请求的预下载信息。
+                HypergryphGamePatch? prePatch = latest.PrePatch;
                 latest = await _hypergryphLauncherClient.GetLatestGameAsync(gameId.GameBiz, "", cancellationToken);
+                latest.PrePatch ??= prePatch;
             }
             return HypergryphGameMetadata.CreateGamePackage(gameId.GameBiz, latest);
         }
@@ -306,6 +341,10 @@ public class HoYoPlayService
         if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
         {
             return HypergryphGameMetadata.CreateGameConfig(gameId.GameBiz);
+        }
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
+        {
+            return ManjuuGameMetadata.CreateGameConfig(gameId.GameBiz);
         }
         if (!_memoryCache.TryGetValue($"{nameof(GameConfig)}_{gameId.Id}", out GameConfig? config))
         {
@@ -333,6 +372,10 @@ public class HoYoPlayService
         {
             return [];
         }
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
+        {
+            return [];
+        }
         var launcherId = LauncherId.FromGameId(gameId);
         if (launcherId is not null)
         {
@@ -350,6 +393,10 @@ public class HoYoPlayService
     public async Task<GameChannelSDK?> GetGameChannelSDKAsync(GameId gameId, CancellationToken cancellationToken = default)
     {
         if (HypergryphGameConstants.IsHypergryphGame(gameId.GameBiz))
+        {
+            return null;
+        }
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
         {
             return null;
         }
@@ -374,6 +421,10 @@ public class HoYoPlayService
         {
             return null;
         }
+        if (ManjuuGameConstants.IsManjuuGame(gameId.GameBiz))
+        {
+            return null;
+        }
         if (!_memoryCache.TryGetValue($"{nameof(GameBranch)}_{gameId.Id}", out GameBranch? branch))
         {
             string lang = CultureInfo.CurrentUICulture.Name;
@@ -392,11 +443,16 @@ public class HoYoPlayService
 
     public async Task<GameSophonChunkBuild?> GetGameSophonChunkBuildAsync(GameBranch gameBranch, GameBranchPackage gameBranchPackage, CancellationToken cancellationToken = default)
     {
-        if (!_memoryCache.TryGetValue($"{nameof(GameSophonChunkBuild)}_{gameBranchPackage.PackageId}", out GameSophonChunkBuild? build))
+        // 预下载分支与正式分支可能共用同一个 package_id，缓存键必须带上分支名，否则会互相覆盖。
+        string cacheKey = $"{nameof(GameSophonChunkBuild)}_{gameBranchPackage.PackageId}_{gameBranchPackage.Branch}";
+        if (!_memoryCache.TryGetValue(cacheKey, out GameSophonChunkBuild? build))
         {
-            string lang = CultureInfo.CurrentUICulture.Name;
-            build = await _client.GetGameSophonChunkBuildAsync(gameBranch, gameBranchPackage, gameBranchPackage.Tag, cancellationToken);
-            _memoryCache.Set($"{nameof(GameSophonChunkBuild)}_{gameBranchPackage.PackageId}", build, TimeSpan.FromMinutes(1));
+            // 预下载分支的 getBuild 接口不接受 tag 参数，带了会返回 -202 not found。
+            bool isPredownload = string.Equals(gameBranchPackage.Branch, "predownload", StringComparison.OrdinalIgnoreCase);
+            build = isPredownload
+                ? await _client.GetGameChunkBuildAsync(gameBranch, gameBranchPackage, cancellationToken)
+                : await _client.GetGameSophonChunkBuildAsync(gameBranch, gameBranchPackage, gameBranchPackage.Tag, cancellationToken);
+            _memoryCache.Set(cacheKey, build, TimeSpan.FromMinutes(1));
         }
         return build;
     }
@@ -419,7 +475,7 @@ public class HoYoPlayService
 
     public async Task<List<GameDXConfig>> GetGameDXConfigsAsync(IEnumerable<GameId> gameIds, CancellationToken cancellationToken = default)
     {
-        gameIds = gameIds.Where(x => !HypergryphGameConstants.IsHypergryphGame(x.GameBiz)).ToList();
+        gameIds = gameIds.Where(x => !HypergryphGameConstants.IsHypergryphGame(x.GameBiz) && !ManjuuGameConstants.IsManjuuGame(x.GameBiz)).ToList();
         if (!gameIds.Any())
         {
             return [];

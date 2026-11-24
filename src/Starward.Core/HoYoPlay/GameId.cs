@@ -43,6 +43,7 @@ public class GameId : IEquatable<GameId>
             GameBiz.arknights_global => new GameId { Id = "arknights_global", GameBiz = "arknights_global" },
             GameBiz.kirara_cn => new GameId { Id = "VjJQDSHIVF", GameBiz = "kirara_cn" },
             GameBiz.kirara_global => new GameId { Id = "eSApR3sYyS", GameBiz = "kirara_global" },
+            GameBiz.azurpromilia_cn => new GameId { Id = "azurpromilia_cn", GameBiz = "azurpromilia_cn" },
             _ => null,
         };
     }

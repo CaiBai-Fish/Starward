@@ -140,6 +140,13 @@ public sealed class HypergryphGamePatch
             ? []
             : [new HypergryphPackagePart { Url = Url, MD5 = MD5, PackageSize = PackageSize }];
 
+    /// <summary>
+    /// 补丁的目标版本。鹰角的预下载补丁（pre_patch）只在 version 字段返回目标版本，
+    /// target_version 为空，因此统一通过此属性取值。
+    /// </summary>
+    [JsonIgnore]
+    public string EffectiveTargetVersion => string.IsNullOrWhiteSpace(TargetVersion) ? Version : TargetVersion;
+
     public string GetFingerprint()
     {
         string value = string.Join('\n', DownloadParts.Select(x => $"{new Uri(x.Url).AbsolutePath}|{x.PackageSize}|{x.MD5}"));

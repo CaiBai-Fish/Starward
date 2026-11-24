@@ -31,6 +31,9 @@ public sealed partial class GameBannerAndPost : UserControl
     private Microsoft.UI.Dispatching.DispatcherQueueTimer _bannerTimer;
 
 
+    private bool _updatingBannerItems;
+
+
     private readonly ILogger<GameBannerAndPost> _logger = AppConfig.GetLogger<GameBannerAndPost>();
 
 
@@ -133,7 +136,25 @@ public sealed partial class GameBannerAndPost : UserControl
 
 
 
-    public List<GameBanner>? Banners { get; set => SetProperty(ref field, value); }
+    public List<GameBanner>? Banners
+    {
+        get => field;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                UpdateBannerItems();
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// 展示给 FlipView 的公告列表。数据量大于 1 时，在首尾各插入一个哨兵项
+    /// （最后一张、第一张），让手势滑动可以越过首尾，再由 SelectionChanged
+    /// 无动画跳回真实项，效果与自动轮换的循环一致。
+    /// </summary>
+    public List<GameBanner>? BannerItems { get; set => SetProperty(ref field, value); }
 
 
 
@@ -291,10 +312,14 @@ public sealed partial class GameBannerAndPost : UserControl
     {
         try
         {
-            if (Banners?.Count > 0)
+            int count = Banners?.Count ?? 0;
+            if (count < 2)
             {
-                FlipView_Banner.SelectedIndex = (FlipView_Banner.SelectedIndex + 1) % Banners.Count;
+                return;
             }
+            // 走到底部的哨兵项后，SelectionChanged 会跳回第一张
+            int index = FlipView_Banner.SelectedIndex + 1;
+            FlipView_Banner.SelectedIndex = index > count + 1 ? 1 : index;
         }
         catch { }
     }
@@ -398,9 +423,129 @@ public sealed partial class GameBannerAndPost : UserControl
 
 
 
-    public static string AddOne(int number)
+    private void FlipView_Banner_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        return (number + 1).ToString();
+        try
+        {
+            if (_updatingBannerItems)
+            {
+                return;
+            }
+            int count = Banners?.Count ?? 0;
+            if (count < 2)
+            {
+                return;
+            }
+            int index = FlipView_Banner.SelectedIndex;
+            if (index == 0)
+            {
+                // 表头哨兵是最后一张，跳到真正的最后一张（内容相同）
+                JumpToBanner(count);
+            }
+            else if (index == count + 1)
+            {
+                // 表尾哨兵是第一张，跳到真正的第一张（内容相同）
+                JumpToBanner(1);
+            }
+        }
+        catch { }
+    }
+
+
+    /// <summary>
+    /// 无动画跳到指定公告，避免跨越多页时出现明显的滑动过程。
+    /// </summary>
+    private void JumpToBanner(int index)
+    {
+        // 只设置选中项，由 FlipView 按目标项的真实位置滚动（保留过渡动画）
+        FlipView_Banner.SelectedIndex = index;
+    }
+
+
+
+
+
+    private static T? FindChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T result)
+            {
+                return result;
+            }
+            if (FindChild<T>(child) is { } descendant)
+            {
+                return descendant;
+            }
+        }
+        return null;
+    }
+
+
+    private void UpdateBannerItems()
+    {
+        _updatingBannerItems = true;
+        try
+        {
+            List<GameBanner>? banners = Banners;
+            if (banners is null || banners.Count == 0)
+            {
+                BannerItems = null;
+                return;
+            }
+            if (banners.Count == 1)
+            {
+                // 只有一张公告时不需要哨兵，否则会重复出现同一张
+                BannerItems = [banners[0]];
+                return;
+            }
+            List<GameBanner> items = new(banners.Count + 2)
+            {
+                banners[^1],
+            };
+            items.AddRange(banners);
+            items.Add(banners[0]);
+            BannerItems = items;
+            // 初始停在第一张真实公告，而不是表头哨兵（最后一张）
+            FlipView_Banner.SelectedIndex = 1;
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                try
+                {
+                    // 首尾哨兵跳转跨度大，扩大内部面板缓存，避免容器回收造成的闪屏
+                    if (FindChild<ItemsStackPanel>(FlipView_Banner) is { } panel)
+                    {
+                        panel.CacheLength = 24;
+                    }
+                    if (FlipView_Banner.SelectedIndex != 1 && BannerItems is { Count: > 2 })
+                    {
+                        FlipView_Banner.SelectedIndex = 1;
+                    }
+                }
+                catch { }
+            });
+        }
+        catch { }
+        finally
+        {
+            _updatingBannerItems = false;
+        }
+    }
+
+
+    /// <summary>
+    /// 把展示列表索引换算成公告列表中的序号（从 1 开始）。
+    /// </summary>
+    public static int GetBannerIndexNumber(int index, int count)
+    {
+        if (count <= 0)
+        {
+            return 0;
+        }
+        int number = ((index - 1) % count + count) % count;
+        return number + 1;
     }
 
 

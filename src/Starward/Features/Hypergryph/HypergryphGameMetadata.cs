@@ -207,7 +207,42 @@ internal static class HypergryphGameMetadata
                 },
                 Patches = patches,
             },
-            PreDownload = new GamePackageVersion { Patches = [] },
+            PreDownload = CreatePreDownloadVersion(latest),
+        };
+    }
+
+
+    /// <summary>
+    /// 预下载版本。鹰角的 pre_patch 只提供目标版本号与分片下载链接，
+    /// 没有单独的完整包信息，因此放入 Major 供设置页显示版本和复制链接。
+    /// </summary>
+    private static GamePackageVersion CreatePreDownloadVersion(HypergryphLatestGame latest)
+    {
+        IReadOnlyList<HypergryphPackagePart> parts = latest.PrePatch?.DownloadParts ?? [];
+        List<GamePackageFile> packages = parts
+            .Where(x => !string.IsNullOrWhiteSpace(x.Url))
+            .Select(x => new GamePackageFile
+            {
+                Url = x.Url,
+                MD5 = x.MD5,
+                Size = x.PackageSize,
+                DecompressedSize = 0,
+            })
+            .ToList();
+        if (packages.Count == 0)
+        {
+            return new GamePackageVersion { Patches = [] };
+        }
+        return new GamePackageVersion
+        {
+            Major = new GamePackageResource
+            {
+                Version = latest.PrePatch!.EffectiveTargetVersion,
+                GamePackages = packages,
+                AudioPackages = [],
+                ResListUrl = "",
+            },
+            Patches = [],
         };
     }
 }

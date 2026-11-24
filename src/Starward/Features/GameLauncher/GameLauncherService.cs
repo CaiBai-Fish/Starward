@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Manjuu;
 using Starward.Core.Yostar;
 using Starward.Features.GameSetting;
 using Starward.Features.HoYoPlay;
@@ -171,6 +172,15 @@ internal partial class GameLauncherService
             }
             return await ReadYostarLocalVersionAsync(installPath);
         }
+        if (Starward.Core.Manjuu.ManjuuGameConstants.IsManjuuGame(gameBiz))
+        {
+            installPath ??= GetGameInstallPath(gameBiz);
+            if (string.IsNullOrWhiteSpace(installPath))
+            {
+                return null;
+            }
+            return ReadManjuuLocalVersion(installPath);
+        }
         if (ThirdPartyGameService.IsThirdPartyGame(gameBiz))
         {
             // 库洛游戏的版本与更新由对应官方启动器管理。
@@ -203,6 +213,32 @@ internal partial class GameLauncherService
 
     [GeneratedRegex(@"game_version=(.+)")]
     private static partial Regex GameVersionRegex();
+
+
+    /// <summary>
+    /// 读取蛮啾游戏本地版本（安装时写入的 _index/version）。
+    /// </summary>
+    private static Version? ReadManjuuLocalVersion(string installPath)
+    {
+        try
+        {
+            string versionFile = Path.Combine(installPath, "_index", "version");
+            if (File.Exists(versionFile))
+            {
+                using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(versionFile));
+                if (document.RootElement.TryGetProperty("version", out System.Text.Json.JsonElement element)
+                    && element.ValueKind is System.Text.Json.JsonValueKind.String
+                    && Version.TryParse(element.GetString(), out Version? version))
+                {
+                    return version;
+                }
+            }
+        }
+        catch
+        {
+        }
+        return null;
+    }
 
 
     /// <summary>
@@ -246,9 +282,9 @@ internal partial class GameLauncherService
             HypergryphLatestGame latest = await _hypergryphLauncherClient.GetLatestGameAsync(gameId.GameBiz, localVersion?.ToString(), default);
             _ = Version.TryParse(latest.Version, out Version? latestVersion);
             Version? predownloadVersion = null;
-            if (!string.IsNullOrWhiteSpace(latest.PrePatch?.TargetVersion))
+            if (!string.IsNullOrWhiteSpace(latest.PrePatch?.EffectiveTargetVersion))
             {
-                _ = Version.TryParse(latest.PrePatch.TargetVersion, out predownloadVersion);
+                _ = Version.TryParse(latest.PrePatch.EffectiveTargetVersion, out predownloadVersion);
             }
             return (latestVersion, predownloadVersion);
         }
@@ -318,6 +354,10 @@ internal partial class GameLauncherService
         if (HypergryphGameConstants.IsHypergryphGame(gameBiz))
         {
             return HypergryphGameConstants.GetGameProfile(gameBiz).ExeName;
+        }
+        if (ManjuuGameConstants.IsManjuuGame(gameBiz))
+        {
+            return ManjuuGameConstants.GetGameProfile(gameBiz).ExeName;
         }
         if (ThirdPartyGameService.GetExeName(gameBiz) is string thirdPartyExeName)
         {
@@ -418,6 +458,7 @@ internal partial class GameLauncherService
             {
                 throw new Exception($"Game is running: {existingProcess.ProcessName}.exe ({existingProcess.Id}).");
             }
+            bool manjuu = ManjuuGameConstants.IsManjuuGame(gameId.GameBiz);
             string? exe = null, arg = null, verb = null;
             if (Directory.Exists(installPath))
             {
@@ -448,7 +489,8 @@ internal partial class GameLauncherService
                 var folder = GetGameInstallPath(gameId);
                 var name = await GetGameExeNameAsync(gameId);
                 exe = Path.Join(folder, name);
-                verb = "runas";
+                // 蛮啾游戏由游戏自身申请管理员权限安装反作弊驱动，启动器不提权。
+                verb = manjuu ? null : "runas";
                 if (!File.Exists(exe))
                 {
                     _logger.LogWarning("Game exe not found: {path}", exe);
@@ -456,7 +498,17 @@ internal partial class GameLauncherService
                 }
             }
             arg = AppConfig.GetStartArgument(gameId.GameBiz)?.Trim();
-            if (!ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.EnableLoginAuthTicket is true)
+            if (manjuu)
+            {
+                // 游戏要求带官方启动器标记参数启动，否则会提示“请使用启动器启动游戏”。
+                arg = ManjuuGameConstants.LaunchArgument;
+                string? userArgument = AppConfig.GetStartArgument(gameId.GameBiz)?.Trim();
+                if (!string.IsNullOrWhiteSpace(userArgument))
+                {
+                    arg += " " + userArgument;
+                }
+            }
+            if (!manjuu && !ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.EnableLoginAuthTicket is true)
             {
                 string? ticket = await _gameAuthLoginService.CreateAuthTicketByGameBiz(gameId);
                 if (!string.IsNullOrWhiteSpace(ticket))
@@ -464,11 +516,11 @@ internal partial class GameLauncherService
                     arg += $" login_auth_ticket={ticket}";
                 }
             }
-            if (!ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.GetUsePopupWindow(gameId.GameBiz))
+            if (!manjuu && !ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.GetUsePopupWindow(gameId.GameBiz))
             {
                 arg += " -popupwindow";
             }
-            if (!ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.GetEnableDX12(gameId.GameBiz))
+            if (!manjuu && !ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.GetEnableDX12(gameId.GameBiz))
             {
                 arg += " -use-d3d12";
             }
@@ -481,7 +533,7 @@ internal partial class GameLauncherService
             {
                 GameSettingService.SetGenshinEnableHDR(gameId.GameBiz, AppConfig.EnableGenshinHDR);
             }
-            if (!thirdPartyTool && !ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.StartGameWithCMD)
+            if (!manjuu && !thirdPartyTool && !ThirdPartyGameService.IsThirdPartyGame(gameId.GameBiz) && AppConfig.StartGameWithCMD)
             {
                 arg = $"""/c start "" /d "{Path.GetDirectoryName(exe)}" "{exe}" {arg}""";
                 exe = "cmd.exe";
@@ -516,13 +568,42 @@ internal partial class GameLauncherService
             {
                 FileName = exe,
                 Arguments = arg,
-                UseShellExecute = true,
+                UseShellExecute = !manjuu,
                 Verb = verb,
                 WorkingDirectory = Path.GetDirectoryName(exe),
             };
+            if (manjuu)
+            {
+                // 与官方启动器一致地传入渠道信息环境变量；登录态留空，由游戏内 SDK 自行登录。
+                ManjuuGameProfile profile = ManjuuGameConstants.GetGameProfile(gameId.GameBiz);
+                info.Environment["manjuu_user_info"] = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    uid = "",
+                    utoken = "",
+                    accountType = 0,
+                });
+                info.Environment["manjuu_channel_info"] = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    channelCode = profile.ChannelCode,
+                    subChannelCode = profile.SubChannelCode,
+                    tapLoginSwitch = true,
+                    initTraceId = "",
+                    currentTraceId = "",
+                    previousTraceId = "",
+                });
+            }
             Process? process = Process.Start(info);
             if (process != null)
             {
+                if (manjuu)
+                {
+                    // 与终末地相同：启动的进程可能不是最终游戏进程。
+                    // AzurPromilia.exe 的启动壳在数秒内退出后由真正的游戏进程接管，
+                    // 先等待交接，再按游戏进程名查找实际进程并记录时长。
+                    await Task.Delay(4000);
+                    Process? game = await _playTimeRecorderService.StartProcessToLogAsync(gameId);
+                    return game ?? process;
+                }
                 if (thirdPartyTool || AppConfig.StartGameWithCMD)
                 {
                     return await _playTimeRecorderService.StartProcessToLogAsync(gameId);

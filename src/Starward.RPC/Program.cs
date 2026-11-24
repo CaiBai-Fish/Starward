@@ -104,6 +104,7 @@ public static class RpcRunner
         });
         builder.Services.AddHttpClient<HoYoPlayClient>().AddPolicyHandler(GetHttpRetryPolicy());
         builder.Services.AddHttpClient<HypergryphLauncherClient>().AddPolicyHandler(GetHttpRetryPolicy());
+builder.Services.AddHttpClient<Starward.Core.Manjuu.ManjuuLauncherClient>().AddPolicyHandler(GetHttpRetryPolicy());
         builder.Services.AddHttpClient<Starward.Core.Yostar.YostarGameClient>()
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
@@ -126,6 +127,7 @@ public static class RpcRunner
         builder.Services.AddSingleton<GameInstallService>();
         builder.Services.AddSingleton<GameInstallHelper>();
         builder.Services.AddScoped<HypergryphGameInstallService>();
+builder.Services.AddScoped<ManjuuGameInstallService>();
         builder.Services.AddScoped<YostarArknightsGameInstallService>();
         builder.Services.AddScoped<GameUninstallService>();
 

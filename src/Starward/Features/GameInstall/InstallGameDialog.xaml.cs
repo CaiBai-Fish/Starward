@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Media;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Manjuu;
 using Starward.Core.Yostar;
 using Starward.Features.GameLauncher;
 using Starward.Features.HoYoPlay;
@@ -83,6 +84,12 @@ public sealed partial class InstallGameDialog : ContentDialog
     {
         try
         {
+            if (ManjuuGameConstants.IsManjuuGame(CurrentGameId.GameBiz))
+            {
+                string root = "F:" + Path.DirectorySeparatorChar + "Games";
+                SetInstallationPath(Path.GetFullPath(Path.Combine(root, GetInstallationDirectoryName())));
+                return;
+            }
             string? defaultFolder = AppConfig.DefaultGameInstallationPath;
             if (Directory.Exists(defaultFolder))
             {
@@ -133,6 +140,10 @@ public sealed partial class InstallGameDialog : ContentDialog
 
     private string GetInstallationDirectoryName()
     {
+        if (ManjuuGameConstants.IsManjuuGame(CurrentGameId.GameBiz))
+        {
+            return ManjuuGameConstants.GetGameProfile(CurrentGameId.GameBiz).InstallationDirectory;
+        }
         if (CurrentGameId.GameBiz == GameBiz.arknights_global)
         {
             return Path.Combine(YostarGameConstants.RootDirectoryName, YostarGameConstants.GameDirectoryName);

@@ -1,4 +1,4 @@
-﻿namespace Starward.Core.HoYoPlay;
+namespace Starward.Core.HoYoPlay;
 
 
 /// <summary>
@@ -45,6 +45,7 @@ public abstract class LauncherId
             GameBiz.hk4e_bilibili => BilibiliGenshin,
             GameBiz.hkrpg_bilibili => BilibiliStarRail,
             GameBiz.nap_bilibili => BilibiliZZZ,
+            GameBiz.azurpromilia_cn => null,
             string value when value.EndsWith("_cn") => ChinaOfficial,
             string value when value.EndsWith("_global") => GlobalOfficial,
             _ => null,

@@ -325,4 +325,7 @@
   <data name="Game_WutheringWaves" xml:space="preserve">
     <value>鸣潮</value>
   </data>
+  <data name="Game_AzurPromilia" xml:space="preserve">
+    <value>蓝色星原：旅谣</value>
+  </data>
 </root>

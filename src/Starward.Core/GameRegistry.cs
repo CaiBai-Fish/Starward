@@ -48,6 +48,8 @@ public class GameRegistry
     public const string GamePath_kirara_cn = @"HKEY_CURRENT_USER\Software\Kuro-Game\Wuthering Waves";
     public const string GamePath_kirara_global = @"HKEY_CURRENT_USER\Software\Kuro-Game\Wuthering Waves";
 
+    public const string GamePath_azurpromilia_cn = @"HKEY_CURRENT_USER\SOFTWARE\AzurPromilia\35_C000";
+
 
 
     // Launcher Config

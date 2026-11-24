@@ -140,6 +140,32 @@
                                     </StackPanel>
                                 </Button>
                             </Grid>
+                            <!--  终末地 / 蓝色星原：新建/完成账号信息  -->
+                            <StackPanel Spacing="4"
+                                        Visibility="{x:Bind CanCacheSwitch, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <!--  新建账号信息  -->
+                                <Button Margin="0,8,0,0"
+                                        Height="40"
+                                        MinWidth="100"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{x:Bind NewGameAccountCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <FontIcon FontSize="16" Glyph="&#xE710;" />
+                                        <TextBlock Text="新建账号信息" />
+                                    </StackPanel>
+                                </Button>
+                                <!--  完成新建账号  -->
+                                <Button Height="40"
+                                        MinWidth="100"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{x:Bind CompleteNewGameAccountCommand}"
+                                        Visibility="{x:Bind IsNewAccountFlow, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <FontIcon FontSize="16" Glyph="&#xE73E;" />
+                                        <TextBlock Text="完成新建账号" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
 
                         </StackPanel>
                     </Flyout>

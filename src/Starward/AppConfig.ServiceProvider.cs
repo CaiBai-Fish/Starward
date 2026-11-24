@@ -60,6 +60,7 @@ public static partial class AppConfig
 
             sc.AddSingleton<HoYoPlayClient>();
             sc.AddHttpClient<HypergryphLauncherClient>();
+            sc.AddHttpClient<Starward.Core.Manjuu.ManjuuLauncherClient>();
         sc.AddHttpClient<YostarGameClient>();
             sc.AddSingleton<GameNoticeClient>();
             sc.AddSingleton<HoYoPlayService>();
@@ -100,6 +101,8 @@ public static partial class AppConfig
 
             sc.AddSingleton<GameAuthLoginService>();
             sc.AddSingleton<GameAccountService>();
+            sc.AddSingleton<EndfieldAccountCacheService>();
+        sc.AddSingleton<ManjuuAccountCacheService>();
 
             sc.AddSingleton<ScreenCaptureService>();
 

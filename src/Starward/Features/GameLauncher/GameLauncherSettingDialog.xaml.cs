@@ -1012,6 +1012,12 @@ public sealed partial class GameLauncherSettingDialog : ContentDialog
                 return;
             }
             var gamePackage = await _hoyoPlayService.GetGamePackageAsync(CurrentGameId);
+            GameConfig? config = await _hoyoPlayService.GetGameConfigAsync(CurrentGameId);
+            GameBranch? branch = null;
+            if (config?.DefaultDownloadMode is DownloadMode.DOWNLOAD_MODE_CHUNK or DownloadMode.DOWNLOAD_MODE_LDIFF)
+            {
+                branch = await _hoyoPlayService.GetGameBranchAsync(CurrentGameId);
+            }
             LatestVersion = gamePackage.Main.Major?.Version ?? gamePackage.Main.Patches.FirstOrDefault()?.Version ?? "";
             var list = GetGameResourcePackageGroups(gamePackage.Main);
             var sdk = await _hoyoPlayService.GetGameChannelSDKAsync(CurrentGameId);
@@ -1036,6 +1042,27 @@ public sealed partial class GameLauncherSettingDialog : ContentDialog
             {
                 PreInstallVersion = gamePackage.PreDownload.Major.Version;
                 PreInstallPackageGroups = GetGameResourcePackageGroups(gamePackage.PreDownload);
+            }
+            else if (branch?.PreDownload is not null)
+            {
+                // Chunk/LDIFF 游戏的预下载信息在 game_branches 的 pre_download 中，不在 game_packages 里。
+                PreInstallVersion = branch.PreDownload.Tag;
+                PreInstallPackageGroups =
+                [
+                    new PackageGroup
+                    {
+                        Name = "预下载包（分块下载）",
+                        Items =
+                        [
+                            new PackageItem
+                            {
+                                FileName = $"预下载 {branch.PreDownload.Tag}",
+                                PackageSize = 0,
+                                DecompressSize = 0,
+                            },
+                        ],
+                    },
+                ];
             }
         }
         catch (Exception ex)

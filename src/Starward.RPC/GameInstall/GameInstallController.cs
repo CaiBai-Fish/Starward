@@ -95,22 +95,33 @@ internal class GameInstallController : GameInstaller.GameInstallerBase
 
     private IServerStreamWriter<GameInstallContextDTO>? _taskProgressStream;
 
+    private GameInstallContext? _lastTaskContext;
+
 
     public override async Task GetTaskProgress(EmptyMessage request, IServerStreamWriter<GameInstallContextDTO> responseStream, ServerCallContext context)
     {
         try
         {
             _taskProgressStream = responseStream;
+            _lastTaskContext = _gameInstallService.CurrentTask;
             _gameInstallService.TaskStateChanged += _gameInstallService_TaskStateChanged;
             using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
             while (await timer.WaitForNextTickAsync(context.CancellationToken))
             {
-                if (_gameInstallService.CurrentTask is null)
+                GameInstallContext? task = _gameInstallService.CurrentTask;
+                if (task is null)
                 {
+                    // 任务结束后 CurrentTask 会被立即置空，终态帧可能来不及送达就关闭了流，
+                    // 客户端会一直停留在最后收到的下载中进度（卡在 100%），这里补发一次终态。
+                    if (_lastTaskContext is { } last && last.State is GameInstallState.Stop or GameInstallState.Finish or GameInstallState.Error)
+                    {
+                        await responseStream.WriteAsync(GameInstallContextDTO.FromTask(last));
+                    }
                     return;
                 }
-                _gameInstallService.CurrentTask.RefreshSpeed();
-                await responseStream.WriteAsync(GameInstallContextDTO.FromTask(_gameInstallService.CurrentTask));
+                _lastTaskContext = task;
+                task.RefreshSpeed();
+                await responseStream.WriteAsync(GameInstallContextDTO.FromTask(task));
             }
         }
         catch (Exception ex)

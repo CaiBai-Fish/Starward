@@ -656,7 +656,8 @@
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Bottom"
                                   x:Load="{x:Bind EnableGameAccountSwitcher}"
-                                  CurrentGameBiz="{x:Bind CurrentGameBiz}" />
+                                  CurrentGameBiz="{x:Bind CurrentGameBiz}"
+                                  CurrentGameId="{x:Bind CurrentGameId}" />
 
         <!--  崩坏三区服选择  -->
         <ComboBox Height="28"

@@ -6,6 +6,7 @@ using Polly.Retry;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
 using Starward.Core.Hypergryph;
+using Starward.Core.Manjuu;
 using Starward.RPC.Env;
 using System;
 using System.Collections.Concurrent;
@@ -230,6 +231,12 @@ internal class GameInstallService
             {
                 YostarArknightsGameInstallService yostarService = _serviceProvider.GetRequiredService<YostarArknightsGameInstallService>();
                 await yostarService.ExecuteAsync(context, cancellationToken);
+                goto TaskCompleted;
+            }
+            if (ManjuuGameConstants.IsManjuuGame(context.GameId.GameBiz))
+            {
+                ManjuuGameInstallService manjuuService = _serviceProvider.GetRequiredService<ManjuuGameInstallService>();
+                await manjuuService.ExecuteAsync(context, cancellationToken);
                 goto TaskCompleted;
             }
             GamePackageService gamePackageService = _serviceProvider.GetRequiredService<GamePackageService>();

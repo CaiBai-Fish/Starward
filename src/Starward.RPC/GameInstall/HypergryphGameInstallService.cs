@@ -83,7 +83,7 @@ internal sealed class HypergryphGameInstallService
 
         context.LocalGameVersion = localVersion;
         context.LatestGameVersion = latest.Version;
-        context.PredownloadVersion = latest.PrePatch?.TargetVersion;
+        context.PredownloadVersion = latest.PrePatch?.EffectiveTargetVersion;
 
         switch (context.Operation)
         {

@@ -224,6 +224,11 @@ public sealed partial class AppBackground : UserControl
                         continue;
                     }
                 }
+                if (filePath != null && gameBackground?.Type is not GameBackground.BACKGROUND_TYPE_VIDEO && CurrentGameId.GameBiz == Starward.Core.GameBiz.azurpromilia_cn)
+                {
+                    // 官方启动器的静态 KV 顶部有用于叠加动态背景的透明带，单独显示时会渲染为黑色，这里裁掉透明带。
+                    filePath = await CropManjuuTransparentTopAsync(filePath, cancellationToken);
+                }
                 DisposeVideoResource();
                 BackgroundImageSource = null;
                 if (filePath != null)
@@ -280,6 +285,68 @@ public sealed partial class AppBackground : UserControl
             IsUpdateBackgroundRunning = false;
         }
     }
+
+
+    /// <summary>
+    /// 裁剪蛮啾静态背景顶部用于叠加动态背景的透明带，避免在单张背景显示时出现黑色横条。
+    /// </summary>
+    private async Task<string> CropManjuuTransparentTopAsync(string file, CancellationToken cancellationToken)
+    {
+        try
+        {
+            string cropped = Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + "_crop.png");
+            if (File.Exists(cropped))
+            {
+                return cropped;
+            }
+            using FileStream fs = File.OpenRead(file);
+            BitmapDecoder decoder = await BitmapDecoder.CreateAsync(fs.AsRandomAccessStream());
+            int width = (int)decoder.PixelWidth;
+            int height = (int)decoder.PixelHeight;
+            PixelDataProvider provider = await decoder.GetPixelDataAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, new BitmapTransform(), ExifOrientationMode.IgnoreExifOrientation, ColorManagementMode.DoNotColorManage);
+            byte[] pixels = provider.DetachPixelData();
+            int top = 0;
+            for (int y = 0; y < height; y++)
+            {
+                bool opaque = true;
+                int rowOffset = y * width * 4;
+                for (int x = 0; x < width; x += 2)
+                {
+                    if (pixels[rowOffset + x * 4 + 3] < 200)
+                    {
+                        opaque = false;
+                        break;
+                    }
+                }
+                if (opaque)
+                {
+                    top = y;
+                    break;
+                }
+                top = y + 1;
+            }
+            if (top < 8 || top >= height / 4)
+            {
+                return file;
+            }
+            int newHeight = height - top;
+            byte[] croppedPixels = new byte[width * newHeight * 4];
+            Buffer.BlockCopy(pixels, top * width * 4, croppedPixels, 0, croppedPixels.Length);
+            using FileStream outFs = File.Create(cropped);
+            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, outFs.AsRandomAccessStream());
+            encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)width, (uint)newHeight, decoder.DpiX, decoder.DpiY, croppedPixels);
+            await encoder.FlushAsync();
+            _logger.LogInformation("Cropped Manjuu background top transparent band: top={top}, height={height}", top, newHeight);
+            return cropped;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Crop Manjuu background transparent top");
+            return file;
+        }
+    }
+
+
 
 
     private async Task ChangeBackgroundImageAsync(string file, CancellationToken cancellationToken)
