@@ -96,12 +96,10 @@ public sealed partial class GameLauncherPage : PageBase
     {
         try
         {
-            string? url = ManjuuGameConstants.IsManjuuGame(CurrentGameBiz)
-                ? ManjuuGameConstants.AzurPromiliaGameLogo
-                : (await _hoYoPlayService.GetGameInfoAsync(CurrentGameId))?.Display?.Logo?.Url;
-            if (!string.IsNullOrWhiteSpace(url))
+            // 其他游戏要么有独立的 webp 图标，要么背景图里已经包含游戏 Logo，不需要额外显示。
+            if (ManjuuGameConstants.IsManjuuGame(CurrentGameBiz))
             {
-                GameLogo = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(url));
+                GameLogo = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(ManjuuGameConstants.AzurPromiliaGameLogo));
             }
         }
         catch (Exception ex)
