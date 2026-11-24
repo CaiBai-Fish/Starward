@@ -70,6 +70,7 @@ public sealed partial class GameLauncherPage : PageBase
         UpdateGameInstallTask();
         CheckCloudGame();
         _ = InitializeGameServerAsync();
+        _ = LoadGameLogoAsync();
         _ = InitializeBackgameImageSwitcherAsync();
         WeakReferenceMessenger.Default.Register<GameInstallPathChangedMessage>(this, OnGameInstallPathChanged);
         WeakReferenceMessenger.Default.Register<MainWindowStateChangedMessage>(this, OnMainWindowStateChanged);
@@ -91,6 +92,25 @@ public sealed partial class GameLauncherPage : PageBase
 
 
 
+    private async Task LoadGameLogoAsync()
+    {
+        try
+        {
+            string? url = ManjuuGameConstants.IsManjuuGame(CurrentGameBiz)
+                ? ManjuuGameConstants.AzurPromiliaGameLogo
+                : (await _hoYoPlayService.GetGameInfoAsync(CurrentGameId))?.Display?.Logo?.Url;
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                GameLogo = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(url));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Load game logo {gameBiz}", CurrentGameBiz);
+        }
+    }
+
+
     private void InitializeGameFeature()
     {
         GameFeatureConfig feature = GameFeatureConfig.FromGameId(CurrentGameId);
@@ -106,6 +126,10 @@ public sealed partial class GameLauncherPage : PageBase
 
 
     public bool EnableGameAccountSwitcher { get; set => SetProperty(ref field, value); }
+
+
+    /// <summary>游戏 Logo（显示在游戏列表下方）。</summary>
+    public Microsoft.UI.Xaml.Media.ImageSource? GameLogo { get; set => SetProperty(ref field, value); }
 
 
 

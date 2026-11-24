@@ -411,6 +411,16 @@
             </StackPanel>
         </Border>
 
+        <!--  游戏 Logo（游戏列表下方）  -->
+        <Image x:Name="Image_GameLogo"
+               Width="180"
+               Margin="32,60,0,0"
+               HorizontalAlignment="Left"
+               VerticalAlignment="Top"
+               IsHitTestVisible="False"
+               Source="{x:Bind GameLogo, FallbackValue={x:Null}}"
+               Stretch="Uniform" />
+
         <!--  背景图切换  -->
         <Border x:Name="Border_SwitchBackgroundImage"
                 Height="60"

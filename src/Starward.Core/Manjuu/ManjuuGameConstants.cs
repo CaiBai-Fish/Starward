@@ -117,6 +117,9 @@ public static class ManjuuGameConstants
 
     public const string AzurPromiliaListLogo = "ms-appx:///Assets/Image/icon_azurpromilia_logo.png";
 
+    /// <summary>游戏页顶部显示的游戏 Logo（官方 game_logo_zh）。</summary>
+    public const string AzurPromiliaGameLogo = "ms-appx:///Assets/Image/game_logo_azurpromilia.png";
+
 
     public static ManjuuGameProfile AzurPromiliaProfile { get; } = new(
         GameBiz.azurpromilia_cn,
