@@ -137,7 +137,7 @@
                                     <sc:CachedImage Name="Grid_GameBizDisplay_Logo"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
-                                                    Background="#60000000"
+                                                    Background="Transparent"
                                                     Source="{x:Bind GameInfo.Display.Logo.Url}"
                                                     Style="{StaticResource NoAnimationImageExStyle}" />
                                     <!--  鼠标移入时 Icon & 选择服务器  -->
