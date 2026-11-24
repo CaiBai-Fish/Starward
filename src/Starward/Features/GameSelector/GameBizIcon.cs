@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Starward.Core;
 using Starward.Core.HoYoPlay;
+using Starward.Core.Manjuu;
 using Starward.Features.ThirdParty;
 using System;
 
@@ -57,7 +58,7 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
         GameIcon = GameBizToIcon(gameBiz);
         GameName = gameBiz.ToGameName();
         ServerIcon = GameBizToServerIcon(gameBiz);
-        ServerName = gameBiz.ToGameServerName();
+        ServerName = GameBizToServerName(gameBiz);
     }
 
 
@@ -69,7 +70,7 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
         GameIcon = gameInfo.Display.Icon.Url;
         GameName = gameInfo.Display.Name;
         ServerIcon = GameBizToServerIcon(gameInfo.GameBiz);
-        ServerName = gameInfo.GameBiz.ToGameServerName();
+        ServerName = GameBizToServerName(gameInfo.GameBiz);
     }
 
 
@@ -86,6 +87,12 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
         }
     }
 
+
+
+    private static string GameBizToServerName(GameBiz gameBiz)
+    {
+        return gameBiz.ToGameServerName();
+    }
 
 
     private static string GameBizToIcon(GameBiz gameBiz)
@@ -105,6 +112,11 @@ public partial class GameBizIcon : ObservableObject, IEquatable<GameBizIcon>
 
     private static string GameBizToServerIcon(GameBiz gameBiz)
     {
+        // 蛮啾游戏没有社交平台渠道，不显示服务器角标图标。
+        if (ManjuuGameConstants.IsManjuuGame(gameBiz))
+        {
+            return "ms-appx:///Assets/Image/Transparent.png";
+        }
         // 鹰角游戏图标本身不区分渠道，用社区平台 Logo 作为服务器角标。
         if (gameBiz.Game is GameBiz.endfield or GameBiz.arknights)
         {
