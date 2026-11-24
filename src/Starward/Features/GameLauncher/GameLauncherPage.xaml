@@ -414,7 +414,7 @@
         <!--  游戏 Logo（游戏列表下方，仅蛮啾游戏显示）  -->
         <Image x:Name="Image_GameLogo"
                Width="250"
-               Margin="32,36,0,0"
+               Margin="32,16,0,0"
                HorizontalAlignment="Left"
                VerticalAlignment="Top"
                IsHitTestVisible="False"
