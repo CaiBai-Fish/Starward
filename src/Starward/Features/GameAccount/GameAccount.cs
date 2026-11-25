@@ -25,6 +25,25 @@ public class GameAccount : ObservableObject
 
     public DateTime Time { get; set; } = DateTime.Now;
 
+
+    /// <summary>界面显示的账号标识：优先 GameUid（蓝色星原的 UID 是字符串），否则显示数字 Uid。</summary>
+    public string DisplayUid
+    {
+        get => !string.IsNullOrWhiteSpace(GameUid) ? GameUid : (Uid > 0 ? Uid.ToString() : "");
+        set
+        {
+            if (!string.IsNullOrWhiteSpace(GameUid))
+            {
+                GameUid = string.IsNullOrWhiteSpace(value) ? null : value;
+            }
+            else if (long.TryParse(value, out long uid))
+            {
+                Uid = uid;
+            }
+            OnPropertyChanged();
+        }
+    }
+
     public bool IsSaved { get; set => SetProperty(ref field, value); }
 
 }

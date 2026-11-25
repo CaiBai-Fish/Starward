@@ -147,12 +147,47 @@ public class GameAccountService
 
 
     /// <summary>
-    /// 蓝色星原：账号以客户端登录缓存（pcsdk.ini）的哈希标识，无法解析 UID。
+    /// 蓝色星原：账号列表来自客户端 history.dat（解密后含 uid / phone / utoken）。
     /// </summary>
     private List<GameAccount> GetManjuuGameAccounts(GameBiz biz)
     {
-        List<GameAccount> list = GetGameAccountsFromDatabase(biz).ToList();
         var cache = AppConfig.GetService<ManjuuAccountCacheService>();
+        ManjuuAccountHistory? history = cache.ReadAccountHistory();
+        List<GameAccount> list = [];
+        if (history?.Items is { Count: > 0 } items)
+        {
+            foreach (ManjuuAccountInfo item in items)
+            {
+                if (string.IsNullOrWhiteSpace(item.Uid))
+                {
+                    continue;
+                }
+                list.Add(new GameAccount
+                {
+                    SHA256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(item.Uid))),
+                    GameBiz = biz,
+                    GameUid = item.Uid,
+                    Name = string.IsNullOrWhiteSpace(item.Phone) ? item.Uid : item.Phone,
+                    Uid = 0,
+                    Value = Encoding.UTF8.GetBytes(item.Uid),
+                    Time = DateTime.Now,
+                    IsSaved = true,
+                });
+            }
+            string? currentUid = history.LastUser?.Uid;
+            if (!string.IsNullOrWhiteSpace(currentUid))
+            {
+                GameAccount? current = list.FirstOrDefault(x => x.GameUid == currentUid);
+                if (current is not null)
+                {
+                    list.Remove(current);
+                    list.Insert(0, current);
+                }
+            }
+            return list;
+        }
+        // 回退：没有 history.dat 时按登录缓存哈希显示未保存账号
+        list = GetGameAccountsFromDatabase(biz).ToList();
         string? hash = cache.GetCurrentCacheHash();
         if (!string.IsNullOrWhiteSpace(hash))
         {
@@ -283,7 +318,13 @@ public class GameAccountService
     {
         if (ManjuuGameConstants.IsManjuuGame(account.GameBiz))
         {
-            AppConfig.GetService<ManjuuAccountCacheService>().Restore(account.SHA256);
+            var manjuuCache = AppConfig.GetService<ManjuuAccountCacheService>();
+            string uid = account.GameUid ?? (account.Value is { Length: > 0 } ? Encoding.UTF8.GetString(account.Value) : "");
+            if (!string.IsNullOrWhiteSpace(uid) && manjuuCache.SwitchAccount(uid))
+            {
+                return;
+            }
+            manjuuCache.Restore(account.SHA256);
             return;
         }
         if (HypergryphGameConstants.IsHypergryphGame(account.GameBiz))

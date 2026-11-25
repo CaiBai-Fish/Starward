@@ -36,7 +36,7 @@
                             <Run Text="" />
                             <Run FontSize="12"
                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                 Text="{x:Bind Uid, Converter={StaticResource GameAccountUidStringConverter}}" />
+                                 Text="{x:Bind DisplayUid}" />
                         </TextBlock>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
@@ -90,7 +90,7 @@
                             <AutoSuggestBox x:Name="AutoSuggestBox_Uid"
                                             GotFocus="AutoSuggestBox_Uid_GotFocus"
                                             Loaded="AutoSuggestBox_Uid_Loaded"
-                                            Text="{x:Bind SelectGameAccount.Uid, Converter={StaticResource GameAccountUidStringConverter}, Mode=TwoWay}"
+                                            Text="{x:Bind SelectGameAccount.DisplayUid, Mode=TwoWay}"
                                             TextChanged="AutoSuggestBox_Uid_TextChanged" />
                             <!--  当前登录的账号未保存  -->
                             <TextBlock Margin="4,8,0,0"
